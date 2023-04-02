@@ -34,7 +34,7 @@
 #endif
 
 // Select integrator (defaults to BDPT)
-//#define _USE_PM_
+#define _USE_PM_
 
 // Use fast version (Y/N)?
 #define _USE_EMBREE_

@@ -20,8 +20,6 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "bunnykiller.h"
-
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -33,6 +31,8 @@
 #include <vector>
 
 #include "External/TinyXML/tinyxml2.h"
+
+#include "bunnykiller.h"
 
 #include "Utils/ProgramParams.h"
 #include "Utils/Timer.h"
@@ -542,7 +542,7 @@ Material3D* load_material_from_mitsuba(tinyxml2::XMLElement *bsdf, UberMaterial3
 
 		Vector3 diffRGB = diffuseColor.to_rgb();
 
-		printf("Diffuse material loaded with RGB: %f %f %f\n", diffRGB[0], diffRGB[2], diffRGB[3]);
+		printf("Diffuse material loaded with RGB: %f %f %f\n", diffRGB[0], diffRGB[1], diffRGB[2]);
 
 		UberMaterial3D *um = new UberMaterial3D();
 		um->add_bsdf(new Lambertian3D(diffuseColor));
@@ -1797,7 +1797,7 @@ int main(int argc, char* argv[])
 	// Create the integrator to be used
 #ifdef _USE_PM_
 	typedef PhotonMapping<DIM, Radiance, RadianceAttenuation> BPT;
-	BPT bpt(w, p.pm_photon_shots, p.pm_photons_nn, p.pm_kernel_shrinkage, p.vol_path_tracing_samples, f_log, film);
+	BPT bpt(w, p.pm_photon_shots, p.pm_photons_nn, p.pm_kernel_shrinkage, p.vol_path_tracing_samples, f_log, film.get());
 	printf("Rendering with Progressive Photon Mapping...\n");
 #else
 	typedef BidirectionalPathTracing<DIM, Radiance, RadianceAttenuation> BPT;

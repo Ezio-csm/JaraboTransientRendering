@@ -152,19 +152,6 @@ namespace Imaging
 							+ " channel image. Max supported output channels is 3");
 		}
 
-		FILE* file = std::fopen(filename, "w");
-
-		if (!file) {
-			throw std::runtime_error(
-					"Error: failed to open output file: \"" + std::string(filename) + "\"");
-		}
-
-		/* We provide our own write function to stb so we can control the file
-		 handle */
-		auto write_fn = [](void* file, void* data, int size) -> void {
-			std::fwrite(data, sizeof(char), size, (FILE*)file);
-		};
-
 		/* Autodetect file format */
 		std::string ext = Filesystem::file_extension(filename);
 
@@ -172,16 +159,28 @@ namespace Imaging
 		if (ext == "hdr") {
 			/* Save RGBE file */
 			Conversor<T> conversor(img.data(), img.size());
-
-			res = stbi_write_hdr_to_func(write_fn, (void*) file, (int) img.width(),
-					(int) img.height(), (int) img.channels(), conversor.data());
+			res = stbi_write_hdr(filename, (int) img.width(), (int) img.height(), (int) img.channels(), conversor.data());
 		} else if (ext == "raw") {
 			/* Save binary dump */
+			FILE* file = std::fopen(filename, "w");
 			size_t count = std::fwrite((const void*) img.data(), sizeof(T), img.size(),
 					(FILE*) file);
-
+			std::fclose(file);
 			res = (count == img.size());
-		} else {
+		} else if (ext == "png") {
+			unsigned char *data = new unsigned char[(int) img.width() * (int) img.height() * 3];
+			for(int i = 0; i < (int)img.height(); i++)
+				for(int j = 0; j < (int)img.width(); j++)
+				{
+					data[i * img.width() * 3 + j * 3 + 0] = (unsigned char)(256 * img(j, i, 0));
+					data[i * img.width() * 3 + j * 3 + 1] = (unsigned char)(256 * img(j, i, 1));
+					data[i * img.width() * 3 + j * 3 + 2] = (unsigned char)(256 * img(j, i, 2));
+				}
+			res = stbi_write_png("abc.png", (int) img.width(),
+					(int) img.height(), (int) img.channels(), data, (int) img.width() * 3);
+			delete data;
+		}
+		else {
 			throw std::runtime_error("Error: unsupported output file format: \"" + ext + "\"");
 		}
 
@@ -189,8 +188,6 @@ namespace Imaging
 			throw std::runtime_error(
 					"Error: failed to write to output file: \"" + std::string(filename) + "\"");
 		}
-
-		std::fclose(file);
 	}
 }; /* namespace Imaging */
 

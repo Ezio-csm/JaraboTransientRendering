@@ -31,6 +31,15 @@
 #include "Integrator/BidirectionalPathTracing.h"
 #include "DataStructures/KDTree.h"
 
+// Undefine min/max macros (if present)
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 template<unsigned D, class Radiance, class RadianceAttenuation>
 class PhotonMapping : public BidirectionalPathTracing<D, Radiance, RadianceAttenuation>
 {
@@ -208,24 +217,12 @@ void PhotonMapping<D,Radiance,RadianceAttenuation>::preprocess()
 			light_sample.instant,
 			VectorN<D>(0), TraceDirection::FROM_LIGHT, light_path);
 
-		bool in_media = false;
 		for (size_t il = 0; il < light_path.size(); ++il) {
-			if (light_path[il].get_type() == VertexR::Type::MEDIUM) {
-				in_media = true;
-			}
-		}
-		
-		in_media = true;
-		if (in_media) {
-			for (size_t il = 0; il < light_path.size(); ++il) {
-				std::vector<Real> p(light_path[il].get_vertex_position().m_data,
-					light_path[il].get_vertex_position().m_data + D);
-
-				if (light_path[il].get_type() == VertexR::Type::SURFACE) {
-					m_surface_tree.store(p, Photon(light_path[il], light_path.get_value() * (m_inv_nb_shots)));
-				} else if (light_path[il].get_type() == VertexR::Type::MEDIUM) {
-					m_medium_tree.store(p, Photon(light_path[il], light_path.get_value() * (m_inv_nb_shots)));
-				}
+			std::vector<Real> p = light_path[il].get_vertex_position().to_stl_vector();
+			if (light_path[il].get_type() == VertexR::Type::SURFACE) {
+				m_surface_tree.store(p, Photon(light_path[il], light_path.get_value() * (m_inv_nb_shots)));
+			} else if (light_path[il].get_type() == VertexR::Type::MEDIUM) {
+				m_medium_tree.store(p, Photon(light_path[il], light_path.get_value() * (m_inv_nb_shots)));
 			}
 		}
 	
@@ -262,16 +259,16 @@ void PhotonMapping<D, Radiance, RadianceAttenuation>::merge_vertices(const Verte
 	veye.compute_photon_scattering(-photon.m_direction, r, t, p1);
 	
 	RadianceAttenuation fe(veye.get_vertex_value());
-	set_attenuation_tracing_direction(fe, TraceDirection::FROM_LIGHT);
-	set_attenuation_tracing_direction(r, TraceDirection::FROM_EYE);
+	set_attenuation_tracing_direction(TraceDirection::FROM_LIGHT, fe);
+	set_attenuation_tracing_direction(TraceDirection::FROM_EYE, r);
 
 	try {
 		f = fe*(r * photon.m_R);
 	} catch (...) {
 		printf("Problem on Product...\n");
-		photon.m_R.print();
-		r.print();
-		fe.print();
+		photon.m_R.print(stderr);
+		r.print(stderr);
+		fe.print(stderr);
 	}
 
 	f *= (type == VertexR::Type::SURFACE) ?
@@ -296,8 +293,7 @@ Radiance PhotonMapping<D, Radiance, RadianceAttenuation>::compute_radiance(const
 	int nb_eye_vertices = std::min((unsigned int)(2), eye_path.size());
 	// Iterate over all eye vertices
 	for (size_t ie = 0; ie < 1; ++ie) {
-		std::vector<Real> x(eye_path[ie].get_vertex_position().m_data,
-						eye_path[ie].get_vertex_position().m_data + D);
+		std::vector<Real> x = eye_path[ie].get_vertex_position().to_stl_vector();
 
 		VPhotons photons;
 		Real max_distance;
@@ -368,8 +364,7 @@ void PhotonMapping<D, Radiance, RadianceAttenuation>::compute_radiance(const Pat
 	int nb_eye_vertices = std::min((unsigned int)(2), eye_path.size());
 	// Iterate over all eye vertices
 	for (size_t ie = 0; ie < 1; ++ie) {
-		std::vector<Real> x(eye_path[ie].get_vertex_position().m_data,
-			eye_path[ie].get_vertex_position().m_data + D);
+		std::vector<Real> x = eye_path[ie].get_vertex_position().to_stl_vector();
 
 		VPhotons photons;
 		Real max_distance;

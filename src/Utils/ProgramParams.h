@@ -152,7 +152,7 @@ struct ProgramParams {
 		transient(true),
 		is_multibounce_streak(false),
 		camera_unwarp(false),
-		time_sampling(false),
+		time_sampling(true),
 		film_usereveal(false),
 		medium_sigma_a(0.),
 		medium_sigma_s(0.),

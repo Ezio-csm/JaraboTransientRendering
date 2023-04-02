@@ -33,7 +33,7 @@
 template<unsigned N, class T>
 class tVectorN
 {
-protected:
+public:
 	std::array<T, N> m_data;
 public:
 	// Constructors
@@ -402,6 +402,11 @@ public:
 	tVectorN<N, T> transform_matrix_to(const tVectorN<N, T>& from, const tVectorN<N, T>& to) const;
 
 	tVectorN<N, T> transform_matrix_to_z(const tVectorN<N, T>& from, const tVectorN<N, T>& from_up) const;
+
+	std::vector<T> to_stl_vector() const
+	{
+		return std::vector<T>(m_data.begin(), m_data.end());
+	}
 }; // tVectorN
 
 // /** Template specializations */
