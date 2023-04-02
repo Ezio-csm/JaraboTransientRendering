@@ -1,25 +1,3 @@
-/* 
- * Copyright (C) 2015, Adrian Jarabo (http://giga.cps.unizar.es/~ajarabo/)
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom
- * the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
- * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #ifndef _TRANSIENT_RENDERER_H_
 #define _TRANSIENT_RENDERER_H_
 
@@ -39,7 +17,7 @@
 	non-progressive time-resolved rendering. 
 	Note that it needs StreakCameraFilm to work properly. */
 template<unsigned D, class Radiance, class RadianceAttenuation>
-class TransientRenderer : public RenderEngine<D, Radiance, RadianceAttenuation>
+class MovingTransientRenderer : public RenderEngine<D, Radiance, RadianceAttenuation>
 {
 protected:
 	using RETR = RenderEngine<D, Radiance, RadianceAttenuation>;
@@ -54,15 +32,15 @@ protected:
 public:
 	bool sensor_mode;
 public:
-	TransientRenderer() :
+	MovingTransientRenderer() :
 		RETR(nullptr), time_sampling(false), sensor_mode(false)
 	{}
 
-	TransientRenderer(FILE *_f_log, bool _time_sampling = false) :
+	MovingTransientRenderer(FILE *_f_log, bool _time_sampling = false) :
 		RETR(_f_log), time_sampling(_time_sampling), sensor_mode(false)
 	{}
 
-	virtual ~TransientRenderer() {}
+	virtual ~MovingTransientRenderer() {}
 
 	virtual void render(const char *name, WorldR& world, IntegratorR *integrator,
 						const Camera<D>& camera, FilmR *film, Sampler *sampler) const;
@@ -71,10 +49,10 @@ public:
 	{
 		sensor_mode = _sensor_mode;
 	}
-}; // TransientRenderer
+}; // MovingTransientRenderer
 
 template<unsigned D, class Radiance, class RadianceAttenuation>
-void TransientRenderer<D,Radiance,RadianceAttenuation>::render(const char *name, WorldR& world,
+void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char *name, WorldR& world,
 		IntegratorR *integrator, const Camera<D>& camera, FilmR *film, Sampler *sampler) const
 {
 	if (RETR::f_log) {
@@ -127,6 +105,7 @@ void TransientRenderer<D,Radiance,RadianceAttenuation>::render(const char *name,
 	const PolarizationFrame<D> camera_frame = camera.get_frame();
 	RadianceSampleRecordVectorR samples_rec;
 
+	// TODO: 增加枚举每帧时间功能
 	while (sampler->get_next_sample(film_sample)) {
 		// Update timer
 		double secs = timer.get_secs();
@@ -157,11 +136,7 @@ void TransientRenderer<D,Radiance,RadianceAttenuation>::render(const char *name,
 		Ray<D> r = camera.get_ray(ic);
 
 		// ...trace the ray, compute time-resolved samples, and store them...
-		// if (time_sampling) {
-            world.Li(r, integrator, samples_rec);// film->get_time_length(), film->get_time_resolution());
-		// } else {
-			// world.Li(r, integrator, samples_rec, film->get_exposure_time(), 0);
-		// }
+        world.Li(r, integrator, samples_rec, film->get_time_length(), film->get_time_resolution());
 
 		// ...discard NaNs and infinities and align
 		for (RadianceSampleR& sample : samples_rec.samples) {

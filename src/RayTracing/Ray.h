@@ -53,6 +53,9 @@ class Ray
 	/// The normalized direction of the ray
 	VectorN<D> direction;
 
+	/// The time when the ray start traversing from origin
+	Real start_time;
+
 	/// The parameter -i.e. the distance we have traversed along the ray
 	Real t;                             
 
@@ -147,6 +150,11 @@ public:
 	inline const VectorN<D>& get_origin() const
 	{
 		return origin;
+	}
+
+	inline Real get_start_time() const
+	{
+		return start_time;
 	}
   
 	/// Get ray parameter.

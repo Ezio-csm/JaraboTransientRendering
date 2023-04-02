@@ -42,6 +42,7 @@
 #include "Camera/OrthographicCamera.h"
 
 #include "RayTracing/World.h"
+#include "RayTracing/MovingWorld.h"
 
 #include "Renderer/RenderEngine.h"
 #include "Renderer/TransientRenderer.h"
