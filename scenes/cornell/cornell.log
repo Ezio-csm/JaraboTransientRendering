@@ -1,0 +1,28 @@
+FILM
+====
+Name: cornell
+Size(x-y-t): 1200 900 1000
+Exposure: 0.1000000015
+Sqrt-spp: 64
+Seed: 5489
+Camera-unwarp: FALSE
+
+Prepared scene to render: 0:0:0.338184
+
+SCENE
+=====
+BB: [-4.935031, -0.784086, -5.689303] - [4.935031, 6.944555, 5.689303]
+Pinhole Camera:
+- Position: [0.000000, 3.300000, 14.000000]
+- Direction: [0.000000, -0.014998, -0.999887]
+- Focal Distance: 2.596282
+- U: [1.000000, -0.000000, 0.000000]
+- V: [0.000000, 0.999888, -0.014998]
+
+LIGTHS
+======
+Point Light Source:
+- Position: [0.000000 5.500000 0.000000]
+- Time: 0.000000
+- Intensity: [10.000000 10.000000 8.000000]
+

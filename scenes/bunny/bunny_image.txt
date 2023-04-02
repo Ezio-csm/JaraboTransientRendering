@@ -1,0 +1,39 @@
+FILM
+====
+Name: bunny_image
+Size(x-y-t): 600 600 900
+Exposure: 0.0250000004
+Sqrt-spp: 8
+Seed: 5489
+Camera-unwarp: FALSE
+
+Prepared scene to render: 0:0:0.016390
+
+SCENE
+=====
+BB: [-5.000000, -5.000000, -5.000000] - [5.000000, 5.000000, 5.000000]
+Pinhole Camera:
+- Position: [1.600000, 0.500000, -1.600000]
+- Direction: [-0.555914, -0.132360, 0.820634]
+- Focal Distance: 1.732051
+- U: [-0.827919, 0.000000, -0.560848]
+- V: [-0.074234, 0.991202, 0.109584]
+
+LIGHTS
+======
+Point Light Source:
+- Position: [0.000000 1.000000 -0.500000]
+- Time: 0.000000
+- Intensity: [10.000000 10.000000 10.000000]
+
+RENDER
+======
+Bidirectional Path Tracing
+- Samples: 1
+- Next Event: Mean Free Path Sampling
+- Angular Sampling: Phase Function
+- Path Termination (Max Path Size 8): Russian Roulette
+- Vertices Connection: Shadow Connection
+
+Preprocessed integrator: 0:0:0.000007
+Total time: 0:0:19.465447
