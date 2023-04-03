@@ -47,6 +47,7 @@
 #include "Renderer/RenderEngine.h"
 #include "Renderer/TransientRenderer.h"
 
+#include "Film/TimesliceFilm.h"
 #include "Film/MultibounceStreakCameraFilm.h"
 #include "Film/KernelBasedStreakCameraFilm.h"
 
@@ -77,6 +78,7 @@
 #include "Filter/GaussianFilter.h"
 #include "Filter/UberFilter.h"
 
+#include "Sampling/TimesliceSampler.h"
 #include "Sampling/StratifiedSampler.h"
 
 #include "Integrator/BidirectionalPathTracing.h"

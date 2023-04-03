@@ -105,7 +105,6 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 	const PolarizationFrame<D> camera_frame = camera.get_frame();
 	RadianceSampleRecordVectorR samples_rec;
 
-	// TODO: 增加枚举每帧时间功能
 	while (sampler->get_next_sample(film_sample)) {
 		// Update timer
 		double secs = timer.get_secs();
@@ -134,6 +133,7 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		
 		// Get the camera sample ray...
 		Ray<D> r = camera.get_ray(ic);
+		r.start_time = sample.current_time;
 
 		// ...trace the ray, compute time-resolved samples, and store them...
         world.Li(r, integrator, samples_rec, film->get_time_length(), film->get_time_resolution());

@@ -419,8 +419,9 @@ public:
 
 	// Return the object that first intersects `ray'
 	inline bool first_intersection(Ray<D>& ray, Intersection<D> &it,
-			const Real &max_length = std::numeric_limits<Real>::infinity()) const
+			const Real &max_length = std::numeric_limits<Real>::infinity(), bool reverse_time = false) const
 	{
+		float flag = reverse_time ? -1. : 1.;
 		/* Initialize ray */
 		RTCRay rtc_ray;
 		// Ray origin
@@ -449,12 +450,12 @@ public:
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
             VectorN<D> dir = ray.get_direction();
-            dir = (dir * light_speed / ray.get_ior() - obj.velocity).normalized();
+            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
             t_rtc_ray.dir[0] = (float)dir[0];
             t_rtc_ray.dir[1] = (float)dir[1];
             t_rtc_ray.dir[2] = (float)dir[2];
             rtcIntersect(obj.g_scene, t_rtc_ray);
-            Real t_time = t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
             if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
                 rtc_ray = t_rtc_ray;
         }
@@ -490,8 +491,9 @@ public:
 	}
 
 	inline bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
-			const Real epsilon = _SIGMA_VISIBILITY_) const
+			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
+		float flag = reverse_time ? -1. : 1.;
 		/* initialize ray */
 		RTCRay rtc_ray;
 		// Ray origin
@@ -520,12 +522,12 @@ public:
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
             VectorN<D> dir = ray.get_direction();
-            dir = (dir * light_speed / ray.get_ior() - obj.velocity).normalized();
+            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
             t_rtc_ray.dir[0] = (float)dir[0];
             t_rtc_ray.dir[1] = (float)dir[1];
             t_rtc_ray.dir[2] = (float)dir[2];
             rtcIntersect(obj.g_scene, t_rtc_ray);
-            Real t_time = t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
             if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
                 rtc_ray = t_rtc_ray;
         }
@@ -534,8 +536,9 @@ public:
 	}
 
 	inline bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
-			const Real epsilon = _SIGMA_VISIBILITY_) const
+			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
+		float flag = reverse_time ? -1. : 1.;
 		/* initialize ray */
 		RTCRay rtc_ray;
 		// Ray origin
@@ -564,12 +567,12 @@ public:
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
             VectorN<D> dir = ray.get_direction();
-            dir = (dir * light_speed / ray.get_ior() - obj.velocity).normalized();
+            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
             t_rtc_ray.dir[0] = (float)dir[0];
             t_rtc_ray.dir[1] = (float)dir[1];
             t_rtc_ray.dir[2] = (float)dir[2];
             rtcOccluded(obj.g_scene, t_rtc_ray);
-            Real t_time = t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
             if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
                 rtc_ray = t_rtc_ray;
         }

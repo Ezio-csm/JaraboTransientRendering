@@ -565,7 +565,7 @@ public:
 
 	// Return the object that first intersects `ray'
 	inline bool first_intersection(Ray<D>& ray, Intersection<D> &it,
-			const Real &max_length = std::numeric_limits<Real>::infinity()) const
+			const Real &max_length = std::numeric_limits<Real>::infinity(), bool reverse_time = false) const
 	{
 		/* Initialize ray */
 		RTCRay rtc_ray;
@@ -616,7 +616,7 @@ public:
 	}
 
 	inline bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
-			const Real epsilon = _SIGMA_VISIBILITY_) const
+			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
 		/* initialize ray */
 		RTCRay rtc_ray;
@@ -640,7 +640,7 @@ public:
 	}
 
 	inline bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
-			const Real epsilon = _SIGMA_VISIBILITY_) const
+			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
 		/* initialize ray */
 		RTCRay rtc_ray;
