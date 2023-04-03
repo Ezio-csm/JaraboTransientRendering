@@ -692,13 +692,28 @@ void parse_args_from_mitsuba(tinyxml2::XMLDocument& doc, ProgramParams& p, World
 			}
 
 			Vector3f ele_vel = Vector3f(0, 0, 0);
+			Real beg_time = 0;
+			Real end_time = 0;
+			for (tinyxml2::XMLElement* eobj = e->FirstChildElement("float"); eobj != nullptr;
+					eobj = eobj->NextSiblingElement("float")) {
+				if(!strcmp("vel_x", eobj->Attribute("name"))){
+					ele_vel[0] = atof(eobj->Attribute("value"));
+				}else if(!strcmp("vel_y", eobj->Attribute("name"))){
+					ele_vel[1] = atof(eobj->Attribute("value"));
+				}else if(!strcmp("vel_z", eobj->Attribute("name"))){
+					ele_vel[2] = atof(eobj->Attribute("value"));
+				}else if(!strcmp("beg_time", eobj->Attribute("name"))){
+					beg_time = atof(eobj->Attribute("value"));
+				}else if(!strcmp("end_time", eobj->Attribute("name"))){
+					end_time = atof(eobj->Attribute("value"));
+				}
+			}
+
 			tinyxml2::XMLElement* evel = e->FirstChildElement("vel");
 			if (evel != nullptr) {
 				ele_vel = Vector3f(atof(evel->Attribute("x")), atof(evel->Attribute("y")), atof(evel->Attribute("z")));
 			}
 
-			Real beg_time = 0;
-			Real end_time = 0;
 			tinyxml2::XMLElement* etime = e->FirstChildElement("time");
 			if (etime != nullptr) {
 				beg_time = atof(etime->Attribute("beg"));
