@@ -23,7 +23,7 @@ protected:
 	using RadianceSampleRecordR = typename FTR::RadianceSampleRecordR;
 	using RadianceSampleRecordVectorR = typename FTR::RadianceSampleRecordVectorR;
 protected:
-	size_t m_time_resolution;
+	size_t m_time_num;
 	Real m_exposure_time;
 	Real m_offset;
 
@@ -57,7 +57,7 @@ protected:
 			int t = (int) (std::floor(x));
 
 			unsigned int init_t = std::max<int>(0, t - half_size);
-			unsigned int end_t = std::min<int>(t + half_size, int(m_time_resolution - 1));
+			unsigned int end_t = std::min<int>(t + half_size, int(m_time_num - 1));
 
 			for (size_t i = init_t; i <= end_t; i++) {
 				samples.push_back(Real(i) + .5);
@@ -70,7 +70,7 @@ public:
 		bool camera_unwarp = false, Filter*_filter = nullptr,
 		FilmComponents comp = FilmComponents::RADIANCE) :
 			FTR(w, h, _filter, comp),
-			m_time_resolution(t),
+			m_time_num(t),
 			m_exposure_time(exposure),
 			m_offset(0.),
 			camera_unwarp(camera_unwarp),
@@ -103,7 +103,7 @@ public:
 
 	virtual unsigned int get_time_resolution() const override
 	{
-		return m_time_resolution;
+		return m_time_num;
 	}
 
 	virtual void add_sample(const Sample& sample, const RadianceSampleRecordR& rec) override
@@ -144,7 +144,7 @@ public:
 				Real pos_sensor = (cam_time - m_offset)/ m_exposure_time;
 
 				/* If out of the range of the sensor, discard */
-				if (!(pos_sensor < m_time_resolution && pos_sensor >= 0.0))
+				if (!(pos_sensor < m_time_num && pos_sensor >= 0.0))
 					continue;
 
 				/* Get positions on the temporal line */
@@ -172,7 +172,7 @@ public:
 
 	virtual Real get_time_length() const override
 	{
-		return Real(m_time_resolution) * m_exposure_time + m_offset;
+		return Real(m_time_num) * m_exposure_time + m_offset;
 	}
 
 	virtual Real get_exposure_time() const override
@@ -248,8 +248,8 @@ void TimesliceFilm<D, Radiance>::advance_timeline()
 				m_available_slices_nsamples.begin()++, m_available_slices_nsamples.end());
 	}
 
-	m_first_available_slice = std::min<size_t>(m_first_available_slice + 1, m_time_resolution - 1);
-	m_last_available_slice = std::min<size_t>(m_last_available_slice + 1, m_time_resolution - 1);
+	m_first_available_slice = std::min<size_t>(m_first_available_slice + 1, m_time_num - 1);
+	m_last_available_slice = std::min<size_t>(m_last_available_slice + 1, m_time_num - 1);
 }
 
 template<unsigned D, class Radiance>

@@ -452,6 +452,8 @@ bool BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::sample_terminat
 
 	if (nb_bounces > m_max_path_size)
 		return true;
+	if (time < 0.)
+		return true;
 
 	switch (m_termination_sampling_technique) {
 		case TerminationSampling::NbBounces:
