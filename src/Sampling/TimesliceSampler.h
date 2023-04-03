@@ -9,7 +9,7 @@
 
 class TimesliceSampler: public Sampler
 {
-	int time_resolution;
+	int time_num;
 	Real time_exposure;
 
 	int current_x, current_y;
@@ -18,9 +18,9 @@ class TimesliceSampler: public Sampler
 	int current_subx, current_suby;
 	bool end;
 public:
-	TimesliceSampler(int _size_x, int _size_y, int _sqrt_spp, int _time_resolution, Real _time_exposure) :
+	TimesliceSampler(int _size_x, int _size_y, int _sqrt_spp, int _time_num, Real _time_exposure) :
 		Sampler(_size_x, _size_y, _sqrt_spp),
-		time_resolution(_time_resolution), time_exposure(_time_exposure),
+		time_num(_time_num), time_exposure(_time_exposure),
         current_x(0), current_y(0), current_time(0),
         limit_x(std::nextafter(Real(1), Real(0.))), limit_y(limit_x),
         current_subx(0), current_suby(0),
@@ -49,7 +49,7 @@ public:
 			if (++current_suby == spp) {
 				current_suby = 0;
 				if (single_pixel) {
-					if (++current_time == time_resolution) {
+					if (++current_time == time_num) {
 						end = true;
 						return true;
 					}
@@ -58,7 +58,7 @@ public:
 				if (++current_x == size_x) {
 					current_x = 0;
 					if (single_scanline) {
-						if (++current_time == time_resolution) {
+						if (++current_time == time_num) {
 							end = true;
 							return true;
 						}
@@ -66,7 +66,7 @@ public:
 
 					if (++current_y == size_y) {
 						current_y = 0;
-						if (++current_time == time_resolution) {
+						if (++current_time == time_num) {
 							end = true;
 							return true;
 						}
@@ -84,7 +84,7 @@ public:
 	{
 		return (single_pixel ?
 				size_t(spp)*size_t(spp) :
-				size_t(size_x)*size_t(size_y)*size_t(spp)*size_t(spp)) * size_t(time_resolution);
+				size_t(size_x)*size_t(size_y)*size_t(spp)*size_t(spp)) * size_t(time_num);
 	}
 
 	void restart()

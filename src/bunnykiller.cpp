@@ -46,6 +46,7 @@
 
 #include "Renderer/RenderEngine.h"
 #include "Renderer/TransientRenderer.h"
+#include "Renderer/MovingTransientRenderer.h"
 
 #include "Film/TimesliceFilm.h"
 #include "Film/MultibounceStreakCameraFilm.h"
@@ -121,6 +122,7 @@ typedef Spectrum RadianceAttenuation;
 
 typedef Film<3, Radiance> FilmS;
 typedef StreakCameraFilm<3, Radiance> StreakCameraFilmS;
+typedef TimesliceFilm<3, Radiance> TimesliceFilmS;
 typedef KernelBasedStreakCameraFilm<3, Radiance> KernelBasedStreakCameraFilmS;
 typedef MultibounceStreakFilm<3, Radiance> MultibounceStreakFilmS;
 
@@ -1529,7 +1531,11 @@ int main(int argc, char* argv[])
 	fprintf(stdout, "\n");
 
 	// WORLD
+#ifdef _MOVING_WORLD_
+	World<DIM, Radiance> w = MovingWorld<DIM, Radiance>();
+#elif
 	World<DIM, Radiance> w = World<DIM, Radiance>();
+#endif
 
 	// Default material when unspecified
 	UberMaterial3D m_grey;
@@ -1689,7 +1695,12 @@ int main(int argc, char* argv[])
 	// ----------------------------------------------------------------------
 	// Create Film and Render engine
 	std::unique_ptr<FilmS> film = nullptr;
+
+#ifdef _MOVING_WORLD_
+	TimesliceSampler sampler(p.width, p.height, p.sqrt_spp, p.time, p.time_resolution);
+#elif
 	StratifiedSampler sampler(p.width, p.height, p.sqrt_spp, true);
+#endif
 	
 	RenderEngine<DIM, Radiance, RadianceAttenuation>* engine;
 	
@@ -1705,6 +1716,22 @@ int main(int argc, char* argv[])
 		comp = comp | FilmComponents::NORMALS;
 	}
 
+#ifdef _MOVING_WORLD_
+	printf("Using a streak film...\n");
+	std::unique_ptr<TimesliceFilmS> tfilm;
+	BoxFilter* filter = new BoxFilter(1.);
+	tfilm = std::make_unique<TimesliceFilmS>(p.width, p.height, p.time, p.time_resolution,
+			p.camera_unwarp, filter, comp);
+	tfilm->set_name(p.image_file, "hdr");
+
+	if (p.film_offset > 0.0)
+		tfilm->set_offset(p.film_offset);
+
+	film = std::move(tfilm);
+	engine = new MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>(f_log, p.time_sampling);
+	static_cast<MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>*>(engine)->set_sensor_mode(
+			sensor_mode);
+#elif
 	if (p.transient) {
 		// If rendering in transient state...
 		// ...create streak-camera film...
@@ -1781,31 +1808,32 @@ int main(int argc, char* argv[])
 		// ... and steady-state renderer.
 		engine = new RenderEngine<DIM, Radiance, RadianceAttenuation>(f_log);
 	}
+#endif // _MOVING_WORLD_
 
 	film->set_aspect_ratio(p.aspectRatioY); //Set film aspect ratio
 
-	if (p.single_pixel && p.single_pixel_x > -1 && p.single_pixel_x < p.width
-			&& p.single_pixel_y > -1 && p.single_pixel_y < p.height) {
-		sampler.set_single_pixel(p.single_pixel_x, p.single_pixel_y);
-		if (p.transient) {
-			if (!p.is_multibounce_streak) {
-				static_cast<StreakCameraFilmS*>(film.get())->set_streak(p.single_pixel_y);
-			} else {
-				static_cast<MultibounceStreakFilmS*>(film.get())->set_streak(p.single_pixel_y);
-			}
-		}
-	}
+	// if (p.single_pixel && p.single_pixel_x > -1 && p.single_pixel_x < p.width
+	// 		&& p.single_pixel_y > -1 && p.single_pixel_y < p.height) {
+	// 	sampler.set_single_pixel(p.single_pixel_x, p.single_pixel_y);
+	// 	if (p.transient) {
+	// 		if (!p.is_multibounce_streak) {
+	// 			static_cast<StreakCameraFilmS*>(film.get())->set_streak(p.single_pixel_y);
+	// 		} else {
+	// 			static_cast<MultibounceStreakFilmS*>(film.get())->set_streak(p.single_pixel_y);
+	// 		}
+	// 	}
+	// }
 
-	if (p.scanline > -1) {
-		sampler.set_scanline(p.scanline);
-		if (p.transient) {
-			if (!p.is_multibounce_streak) {
-				static_cast<StreakCameraFilmS*>(film.get())->set_streak(p.scanline);
-			} else {
-				static_cast<MultibounceStreakFilmS*>(film.get())->set_streak(p.scanline);
-			}
-		}
-	}
+	// if (p.scanline > -1) {
+	// 	sampler.set_scanline(p.scanline);
+	// 	if (p.transient) {
+	// 		if (!p.is_multibounce_streak) {
+	// 			static_cast<StreakCameraFilmS*>(film.get())->set_streak(p.scanline);
+	// 		} else {
+	// 			static_cast<MultibounceStreakFilmS*>(film.get())->set_streak(p.scanline);
+	// 		}
+	// 	}
+	// }
 	
 	// Reseed the global RNG
 	Random::StdRNG.seed(p.new_seed);

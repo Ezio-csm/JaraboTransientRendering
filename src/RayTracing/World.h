@@ -207,6 +207,11 @@ public:
 	//-----------------------------------------------------------
 	// Geometry
 #ifdef _USE_EMBREE_
+	virtual void add_triangle_mesh(const std::string &name_file, Material3D *mat, const VectorN<D> &velocity,
+				Real start_time = 0, Real end_time = std::numeric_limits<Real>::infinity())
+	{
+		add_triangle_mesh(name_file, mat);
+	}
 	void add_triangle_mesh(const std::string &name_file, Material3D *mat)
 	{
 		std::ifstream fin(name_file.c_str());

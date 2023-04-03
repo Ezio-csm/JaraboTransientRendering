@@ -36,8 +36,7 @@ protected:
     Real light_speed = 1.;
 
 public:
-    MovingWorld() :
-	{}
+    MovingWorld() {}
 
 	//-----------------------------------------------------------
 	// Geometry
@@ -45,6 +44,11 @@ public:
 	void add_triangle_mesh(const std::string &name_file, Material3D *mat, const VectorN<D> &velocity,
             Real start_time = 0, Real end_time = std::numeric_limits<Real>::infinity())
 	{
+		if(velocity == VectorN<D>(0))
+		{
+			World::add_triangle_mesh(name_file, mat, velocity);
+			return;
+		}
 		std::ifstream fin(name_file.c_str());
 		if (!fin.is_open()) {
 			throw std::runtime_error("Error: failed to open model file: \"" + name_file + "\"");

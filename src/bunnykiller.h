@@ -39,6 +39,9 @@
 // Use fast version (Y/N)?
 #define _USE_EMBREE_
 
+// Use moving scene rendering?
+#define _MOVING_WORLD_
+
 // Select extra effects to render
 //#define _FLUORESCENCE_
 //#define _POLARIZATION_
