@@ -31,13 +31,14 @@ struct Sample
 	Vector2 position;
 	Real weight;
 	Real time; // seconds, for motion blur
+	Real current_time; // current time, for time slice sampler
 
 	Sample() :
-		position(), weight(1.), time(0.)
+		position(), weight(1.), time(0.), current_time(0.)
 	{}
 
-	Sample(const Vector2 &p, const Real w = 1., const Real t = 0.) :
-		position(p), weight(w), time(t)
+	Sample(const Vector2 &p, const Real w = 1., const Real t = 0., const Real _current_time = 0.) :
+		position(p), weight(w), time(t), current_time(_current_time)
 	{}
 };
 

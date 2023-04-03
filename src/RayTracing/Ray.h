@@ -78,6 +78,21 @@ public:
 			Real _n = DEFAULT_REFRACTION_INDEX, Medium<D> *_medium = nullptr):
 		origin(p),
 		direction(d),
+		start_time(0),
+		t(FLT_MAX),
+		level(_level),
+		hit(false),
+		n(_n),
+		medium(_medium)
+	{
+		if(normalize_d) direction.normalize();
+	}
+
+	Ray(const VectorN<D>& p, const VectorN<D>& d, bool normalize_d, Real _start_time, int _level = 0,
+			Real _n = DEFAULT_REFRACTION_INDEX, Medium<D> *_medium = nullptr):
+		origin(p),
+		direction(d),
+		start_time(_start_time),
 		t(FLT_MAX),
 		level(_level),
 		hit(false),
@@ -90,6 +105,7 @@ public:
 	Ray(const VectorN<D>& p, const VectorN<D>& d, Real _n, Medium<D> *_medium = nullptr) :
 		origin(p),
 		direction(d),
+		start_time(0),
 		t(FLT_MAX),
 		level(0),
 		hit(false),
@@ -103,6 +119,7 @@ public:
 			Medium<D> *_medium = nullptr) :
 		origin(p),
 		direction(d),
+		start_time(0),
 		t(FLT_MAX),
 		level(_level),
 		hit(false),
@@ -113,6 +130,7 @@ public:
 	}
 
     Ray(Real _n = DEFAULT_REFRACTION_INDEX, Medium<D> *_medium = nullptr) :
+		start_time(0),
     	t(FLT_MAX),
 		level(0),
 		hit(false),
@@ -123,6 +141,7 @@ public:
     Ray(Real _t, const VectorN<D>& p, const VectorN<D>& d, Real _n = 1.0) :
 		origin(p),
 		direction(d),
+		start_time(0),
 		t(_t),
 		level(0),
 		hit(false),
@@ -133,6 +152,7 @@ public:
 	Ray(const Ray<D>& r) :
 		origin(r.origin),
 		direction(r.direction),
+		start_time(r.start_time),
 		t(r.t),
 		level(r.level),
 		hit(r.hit),
@@ -167,6 +187,11 @@ public:
 	inline const VectorN<D>& get_direction() const
 	{
 		return direction;
+	}
+
+	inline void set_start_time(Real _st)
+	{
+		start_time = _st;
 	}
 
 	inline void set_medium(Medium<D> *m)
