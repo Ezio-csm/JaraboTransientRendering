@@ -1,5 +1,5 @@
-#ifndef _TRANSIENT_RENDERER_H_
-#define _TRANSIENT_RENDERER_H_
+#ifndef _MOVING_TRANSIENT_RENDERER_H_
+#define _MOVING_TRANSIENT_RENDERER_H_
 
 #include "bunnykiller.h"
 
@@ -12,10 +12,6 @@
 #include "Film/StreakCameraFilm.h"
 #include "Utils/Timer.h"
 
-/** Class implementing transient rendering engine. 
-	It contains the rendering main loop, and supports 
-	non-progressive time-resolved rendering. 
-	Note that it needs StreakCameraFilm to work properly. */
 template<unsigned D, class Radiance, class RadianceAttenuation>
 class MovingTransientRenderer : public RenderEngine<D, Radiance, RadianceAttenuation>
 {
@@ -133,7 +129,7 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		
 		// Get the camera sample ray...
 		Ray<D> r = camera.get_ray(ic);
-		r.start_time = sample.current_time;
+		r.set_start_time(film_sample.current_time);
 
 		// ...trace the ray, compute time-resolved samples, and store them...
         world.Li(r, integrator, samples_rec, film->get_time_length(), film->get_time_resolution());
@@ -175,4 +171,4 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 	film->write(name);
 }
 
-#endif //_TRANSIENT_RENDERER_H_
+#endif //_MOVING_TRANSIENT_RENDERER_H_
