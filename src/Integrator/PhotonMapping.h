@@ -215,7 +215,7 @@ void PhotonMapping<D,Radiance,RadianceAttenuation>::preprocess()
 			BDPTR::m_world.get_ior(), BDPTR::m_world.get_medium()),
 			light_sample.irradiance, pl1*pl2,
 			light_sample.instant,
-			VectorN<D>(0), TraceDirection::FROM_LIGHT, light_path);
+			VectorN<D>(0), TraceDirection::FROM_LIGHT, light_path, false);
 
 		for (size_t il = 0; il < light_path.size(); ++il) {
 			std::vector<Real> p = light_path[il].get_vertex_position().to_stl_vector();
@@ -435,7 +435,7 @@ Radiance PhotonMapping<D, Radiance, RadianceAttenuation>::operator()(const Ray<D
 		BDPTR::m_world.sample_light(pl1)->sample(light_sample, pl2);
 
 		// Generate eye path
-		BDPTR::generate_path(r, Radiance(1.0), 1.0, 0.0, light_sample.pos, TraceDirection::FROM_EYE, eye_path);
+		BDPTR::generate_path(r, Radiance(1.0), 1.0, r.get_start_time(), light_sample.pos, TraceDirection::FROM_EYE, eye_path, true);
 		if (eye_path.size() == 0)
 			continue;
 				
@@ -468,7 +468,7 @@ void PhotonMapping<D, Radiance, RadianceAttenuation>::operator()(const Ray<D> &r
 		BDPTR::m_world.sample_light(pl1)->sample(light_sample, pl2);
 
 		// Generate eye path
-		BDPTR::generate_path(r, Radiance(1), 1, 0, light_sample.pos, TraceDirection::FROM_EYE, eye_path);
+		BDPTR::generate_path(r, Radiance(1), 1, r.get_start_time(), light_sample.pos, TraceDirection::FROM_EYE, eye_path, true);
 		if (eye_path.size() == 0)
 			continue;
 

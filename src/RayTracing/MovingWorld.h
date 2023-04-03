@@ -1,45 +1,11 @@
-/* 
-* Copyright (C) 2015, Adrian Jarabo (http://giga.cps.unizar.es/~ajarabo/)
-*
-* Permission is hereby granted, free of charge, to any person obtaining
-* a copy of this software and associated documentation files (the "Software"),
-* to deal in the Software without restriction, including without limitation
-* the rights to use, copy, modify, merge, publish, distribute, sublicense,
-* and/or sell copies of the Software, and to permit persons to whom
-* the Software is furnished to do so, subject to the following conditions:
-
-* The above copyright notice and this permission notice shall be included
-* in all copies or substantial portions of the Software.
-
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-* DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-* OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-#ifndef _WORLD_H_
-#define _WORLD_H_
+#ifndef _MOVINGWORLD_H_
+#define _MOVINGWORLD_H_
 
 #include "bunnykiller.h"
 
-#include <algorithm>
-#include <array>
-#include <vector>
-#include <assert.h>
-#include <fstream>
-#include <stdexcept>
+#include "RayTracing/World.h"
 
-#include "Utils/RandomNumbers.h"
-#include "Color/Spectrum.h"
-#include "LightSource/LightSource.h"
-#include "Material/Material.h"
-#include "Media/Medium.h"
-#include "Integrator/Integrator.h"
-#include "Geometry/ObjectPointer.h"
-#include "Geometry/Aggregate/Aggregate.h"
+#include <vector>
 
 #ifdef _USE_EMBREE_
 #if defined(__GNUC__) || defined(__GNUG__)
@@ -53,161 +19,31 @@
 #include "External/Embree/include/embree2/rtcore_ray.h"
 #endif // _USE_EMBREE_
 
-#ifdef _USE_EMBREE_
-/* error reporting function for embree2 */
-void error_handler(void*, const RTCError code, const char* str = nullptr)
-{
-	if (code == RTC_NO_ERROR)
-		return;
-
-	printf("Embree: ");
-	switch (code) {
-		case RTC_UNKNOWN_ERROR:
-			printf("RTC_UNKNOWN_ERROR");
-			break;
-		case RTC_INVALID_ARGUMENT:
-			printf("RTC_INVALID_ARGUMENT");
-			break;
-		case RTC_INVALID_OPERATION:
-			printf("RTC_INVALID_OPERATION");
-			break;
-		case RTC_OUT_OF_MEMORY:
-			printf("RTC_OUT_OF_MEMORY");
-			break;
-		case RTC_UNSUPPORTED_CPU:
-			printf("RTC_UNSUPPORTED_CPU");
-			break;
-		case RTC_CANCELLED:
-			printf("RTC_CANCELLED");
-			break;
-		default:
-			printf("invalid error code");
-	}
-
-	if (str) {
-		printf("%s\n", str);
-	}
-
-	exit(1);
-}
-#endif // _USE_EMBREE_
-
-/** This class contains all the information about the scene, including
-	the geometry, materials, light sources, and background.		*/
 template<unsigned D, class Radiance>
-class World
+class MovingWorld : public World<D, Radiance>
 {
-	using LightSourceR = LightSource<D, Radiance>;
-	using RadianceSampleR = RadianceSample<D, Radiance>;
-	using RadianceSampleRecordR = RadianceSampleRecord<D, Radiance>;
-	using RadianceSampleRecordVectorR = RadianceSampleRecordVector<D, Radiance>;
-
 protected:
-#ifdef _USE_EMBREE_
-	/** EMBREE scene data */
-	RTCDevice g_device = nullptr;
-	RTCScene g_scene = nullptr;
-#else
-	/** Geometry in the World */
-	Aggregate<ObjectPointer<D>,D> geometry;
-	Real m_scene_radius;
-#endif // _USE_EMBREE_
+    struct Object
+    {
+        RTCScene g_scene;
+        VectorN<D> velocity;
+        Real start_time;
+        Real end_time;
+    };
 
-	/** Materials in the World */
+    std::vector<Object> objects;
+    
+    Real light_speed = 1.;
 
-	/** Lights in the World */
-	std::vector<LightSourceR*> light_source_list;
-
-	/** Background colour used to shade rays that miss all objects.
-		It should probably something more programable... Maybe tem-
-		platize it to support environment maps or things like that. */
-	Spectrum background;
-
-	/** Default world's medium and index of refraction 
-		i.e. the medium and speed of light which is not defined by 
-		any volume. */
-	Medium<D> *medium;
-	Real ior;
-	//LambertianCamera* lcam;
 public:
-	World() :
-#ifndef _USE_EMBREE_
-		m_scene_radius(0.),
-#endif // _USE_EMBREE_
-		background(1.), medium(nullptr), ior(1.)
-	{	
-		Material<D>::set_default_medium(nullptr);
-		Material<D>::set_default_refraction_index(1.);
-
-#ifdef _USE_EMBREE_
-		/* EMBREE: for best performance set FTZ and DAZ flags in MXCSR control and status register */
-		_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-#ifdef _MM_SET_DENORMALS_ZERO_MODE
-		_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
-#endif
-
-		///* create new Embree device */
-		g_device = rtcNewDevice(nullptr);
-		error_handler(nullptr, rtcDeviceGetError(g_device));
-
-		/* set error handler */
-		rtcDeviceSetErrorFunction2(g_device, error_handler, nullptr);
-
-		/* create scene */
-		g_scene = rtcDeviceNewScene(g_device, RTC_SCENE_STATIC | RTC_SCENE_INCOHERENT, RTC_INTERSECT1 | RTC_INTERPOLATE);
-#endif // _USE_EMBREE_
-	}
-	
-	//-----------------------------------------------------------
-	// Set & get background color.
-	void set_background(const Spectrum &bkg)
-	{
-		background = bkg;
-	}
-
-	Spectrum get_background( const VectorN<D> &omega ) const
-	{
-		return background;
-	}
-
-	//-----------------------------------------------------------
-	// Light sources' functions
-	inline void add_light(LightSourceR* ls)
-	{
-		light_source_list.push_back(ls);
-	}
-
-	const LightSourceR *light(const int idx) const
-	{
-		return (light_source_list[idx]);
-	}
-
-	const LightSourceR *sample_light(const Intersection<D> &it, Real &pdf) const
-	{
-		//Might be improved...
-		return sample_light(pdf);
-	}
-
-	const LightSourceR *sample_light(Real &pdf) const
-	{
-		//Might be improved...
-		Real idx_f = Random::StdRNG.next_real();
-
-		size_t idx = (size_t)(idx_f*light_source_list.size());
-		pdf = Real(1.) / Real(light_source_list.size());
-
-		return light_source_list[idx];
-	}
-
-	inline unsigned int nb_lights() const
-	{
-		return light_source_list.size();
-	}
+    MovingWorld() :
+	{}
 
 	//-----------------------------------------------------------
 	// Geometry
 #ifdef _USE_EMBREE_
-	void add_triangle_mesh(const std::string &name_file, Material3D *mat)
+	void add_triangle_mesh(const std::string &name_file, Material3D *mat, const VectorN<D> &velocity,
+            Real start_time = 0, Real end_time = std::numeric_limits<Real>::infinity())
 	{
 		std::ifstream fin(name_file.c_str());
 		if (!fin.is_open()) {
@@ -521,30 +357,39 @@ public:
 		/* Copy vertex data */
 		std::copy(vertices.begin(), vertices.end(), rtc_vertices);
 
+        /* Create new object, store velocity */
+        Object new_obj;
+        new_obj.g_scene = rtcDeviceNewScene(World::g_device, RTC_SCENE_STATIC | RTC_SCENE_INCOHERENT, RTC_INTERSECT1 | RTC_INTERPOLATE);
+        new_obj.velocity = velocity;
+        new_obj.start_time = start_time;
+        new_obj.end_time = end_time;
+
 		/* Create a Embree triangulated mesh */
-		unsigned rtc_mesh = rtcNewTriangleMesh(g_scene, RTC_GEOMETRY_STATIC, n_triangles, n_vertices);
+		unsigned rtc_mesh = rtcNewTriangleMesh(new_obj.g_scene, RTC_GEOMETRY_STATIC, n_triangles, n_vertices);
 
 		/* Set mesh indices buffer */
-		rtcSetBuffer2(g_scene, rtc_mesh, RTC_INDEX_BUFFER, rtc_triangles,
+		rtcSetBuffer2(new_obj.g_scene, rtc_mesh, RTC_INDEX_BUFFER, rtc_triangles,
 			0, sizeof(rtc_Triangle), n_triangles);
 		/* Set mesh vertices buffer */
-		rtcSetBuffer2(g_scene, rtc_mesh, RTC_VERTEX_BUFFER, rtc_vertices,
+		rtcSetBuffer2(new_obj.g_scene, rtc_mesh, RTC_VERTEX_BUFFER, rtc_vertices,
 			0, sizeof(rtc_Vertex), n_vertices);
 		/* Set mesh vertex normals buffer */
-		rtcSetBuffer2(g_scene, rtc_mesh, RTC_USER_VERTEX_BUFFER0, rtc_vertices,
+		rtcSetBuffer2(new_obj.g_scene, rtc_mesh, RTC_USER_VERTEX_BUFFER0, rtc_vertices,
 			sizeof(rtc_Vertex::pos), sizeof(rtc_Vertex), n_vertices);
 		/* Set mesh vertex texture coordinates buffer */
-		rtcSetBuffer2(g_scene, rtc_mesh, RTC_USER_VERTEX_BUFFER1, rtc_vertices,
+		rtcSetBuffer2(new_obj.g_scene, rtc_mesh, RTC_USER_VERTEX_BUFFER1, rtc_vertices,
 			sizeof(rtc_Vertex::pos) + sizeof(rtc_Vertex::normal), sizeof(rtc_Vertex), n_vertices);
 
 		/* Set mesh user data */
-		rtcSetUserData(g_scene, rtc_mesh, (void *)mat);
+		rtcSetUserData(new_obj.g_scene, rtc_mesh, (void *)mat);
 	}
 
 	inline void freeze()
 	{
 		/* commit changes to scene */
-		rtcCommit(g_scene);
+		rtcCommit(World::g_scene);
+        for(auto &obj:objects)
+            rtcCommit(obj.g_scene);
 
 		for (unsigned int i = 0; i < light_source_list.size(); ++i)
 			light_source_list[i]->setup();
@@ -553,20 +398,30 @@ public:
 	inline AABB<D> get_bounding_volume() const
 	{
 		RTCBounds rtc_bounds;
-		rtcGetBounds(g_scene, rtc_bounds);
-
-		return AABB<D>(VectorN<D>(rtc_bounds.lower_x,
+		rtcGetBounds(World::g_scene, rtc_bounds);
+        AABB<D> res(VectorN<D>(rtc_bounds.lower_x,
 		                          rtc_bounds.lower_y,
 		                          rtc_bounds.lower_z),
 		                          VectorN<D>(rtc_bounds.upper_x,
 		                                     rtc_bounds.upper_y,
 		                                     rtc_bounds.upper_z));
+        for(auto &obj : objects)
+        {
+            rtcGetBounds(obj.g_scene, rtc_bounds);
+            res.add(AABB<D>(VectorN<D>(rtc_bounds.lower_x,
+		                          rtc_bounds.lower_y,
+		                          rtc_bounds.lower_z),
+		                          VectorN<D>(rtc_bounds.upper_x,
+		                                     rtc_bounds.upper_y,
+		                                     rtc_bounds.upper_z)));
+        }
 	}
 
 	// Return the object that first intersects `ray'
 	inline bool first_intersection(Ray<D>& ray, Intersection<D> &it,
 			const Real &max_length = std::numeric_limits<Real>::infinity(), bool reverse_time = false) const
 	{
+		float flag = reverse_time ? -1. : 1.;
 		/* Initialize ray */
 		RTCRay rtc_ray;
 		// Ray origin
@@ -583,18 +438,38 @@ public:
 		rtc_ray.geomID = RTC_INVALID_GEOMETRY_ID;
 		rtc_ray.primID = RTC_INVALID_GEOMETRY_ID;
 
-		rtcIntersect(g_scene, rtc_ray);
+        RTCRay static_rtc_ray = rtc_ray;
+		rtcIntersect(World::g_scene, rtc_ray);
+        for(auto obj : objects)
+        {
+            RTCRay t_rtc_ray = static_rtc_ray;
+            VectorN<D> origin = ray.get_origin();
+            Real moving_time = ray.get_start_time() - obj.start_time;
+            origin = origin + obj.velocity * moving_time;
+            t_rtc_ray.org[0] = (float)origin[0];
+            t_rtc_ray.org[1] = (float)origin[1];
+            t_rtc_ray.org[2] = (float)origin[2];
+            VectorN<D> dir = ray.get_direction();
+            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
+            t_rtc_ray.dir[0] = (float)dir[0];
+            t_rtc_ray.dir[1] = (float)dir[1];
+            t_rtc_ray.dir[2] = (float)dir[2];
+            rtcIntersect(obj.g_scene, t_rtc_ray);
+            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+            if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
+                rtc_ray = t_rtc_ray;
+        }
 
 		if (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID){
 			Vector2f uv_aux;
-			rtcInterpolate2(g_scene, rtc_ray.geomID, rtc_ray.primID,
+			rtcInterpolate2(World::g_scene, rtc_ray.geomID, rtc_ray.primID,
 				rtc_ray.u, rtc_ray.v, RTC_USER_VERTEX_BUFFER1,
 				(float*)&uv_aux, nullptr, nullptr, nullptr, nullptr, nullptr, 2);
 
 			Vector2 uv(uv_aux[0], uv_aux[1]);
 
 			Vector3f normal_aux;
-			rtcInterpolate2(g_scene, rtc_ray.geomID, rtc_ray.primID,
+			rtcInterpolate2(World::g_scene, rtc_ray.geomID, rtc_ray.primID,
 				rtc_ray.u, rtc_ray.v, RTC_USER_VERTEX_BUFFER0,
 				(float*)&normal_aux, nullptr, nullptr, nullptr, nullptr, nullptr, 3);
 
@@ -618,6 +493,7 @@ public:
 	inline bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
 			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
+		float flag = reverse_time ? -1. : 1.;
 		/* initialize ray */
 		RTCRay rtc_ray;
 		// Ray origin
@@ -634,7 +510,27 @@ public:
 		rtc_ray.geomID = RTC_INVALID_GEOMETRY_ID;
 		rtc_ray.primID = RTC_INVALID_GEOMETRY_ID;
 
-		rtcIntersect(g_scene, rtc_ray);
+		RTCRay static_rtc_ray = rtc_ray;
+		rtcIntersect(World::g_scene, rtc_ray);
+        for(auto obj : objects)
+        {
+            RTCRay t_rtc_ray = static_rtc_ray;
+            VectorN<D> origin = ray.get_origin();
+            Real moving_time = ray.get_start_time() - obj.start_time;
+            origin = origin + obj.velocity * moving_time;
+            t_rtc_ray.org[0] = (float)origin[0];
+            t_rtc_ray.org[1] = (float)origin[1];
+            t_rtc_ray.org[2] = (float)origin[2];
+            VectorN<D> dir = ray.get_direction();
+            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
+            t_rtc_ray.dir[0] = (float)dir[0];
+            t_rtc_ray.dir[1] = (float)dir[1];
+            t_rtc_ray.dir[2] = (float)dir[2];
+            rtcIntersect(obj.g_scene, t_rtc_ray);
+            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+            if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
+                rtc_ray = t_rtc_ray;
+        }
 
 		return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
 	}
@@ -642,6 +538,7 @@ public:
 	inline bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
 			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
+		float flag = reverse_time ? -1. : 1.;
 		/* initialize ray */
 		RTCRay rtc_ray;
 		// Ray origin
@@ -658,133 +555,36 @@ public:
 		rtc_ray.geomID = RTC_INVALID_GEOMETRY_ID;
 		rtc_ray.primID = RTC_INVALID_GEOMETRY_ID;
 
-		rtcOccluded(g_scene, rtc_ray);
+		RTCRay static_rtc_ray = rtc_ray;
+		rtcOccluded(World::g_scene, rtc_ray);
+        for(auto obj : objects)
+        {
+            RTCRay t_rtc_ray = static_rtc_ray;
+            VectorN<D> origin = ray.get_origin();
+            Real moving_time = ray.get_start_time() - obj.start_time;
+            origin = origin + obj.velocity * moving_time;
+            t_rtc_ray.org[0] = (float)origin[0];
+            t_rtc_ray.org[1] = (float)origin[1];
+            t_rtc_ray.org[2] = (float)origin[2];
+            VectorN<D> dir = ray.get_direction();
+            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
+            t_rtc_ray.dir[0] = (float)dir[0];
+            t_rtc_ray.dir[1] = (float)dir[1];
+            t_rtc_ray.dir[2] = (float)dir[2];
+            rtcOccluded(obj.g_scene, t_rtc_ray);
+            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+            if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
+                rtc_ray = t_rtc_ray;
+        }
 
 		return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
 	}
-
-#else // _USE_EMBREE_
-	inline void add_object(const ObjectPointer<D> &o)
-	{
-		geometry.add_primitive(o);
-	}
-	inline void add_objects(std::vector<ObjectPointer<D> > &os)
-	{
-		geometry.add_primitives(os);
-	}
-
-	inline void freeze()
-	{	
-		geometry.freeze(); 
-		m_scene_radius = geometry.get_bounding_box().get_max_dimension()/2;
-
-		for (unsigned int i = 0; i < light_source_list.size(); ++i) {
-			light_source_list[i]->setup();
-		}
-	}
-	// Return the object that first intersects `ray'
-	inline bool first_intersection(Ray<D>& ray, Intersection<D> &it,
-			const Real &max_length = std::numeric_limits<Real>::infinity()) const
-	{
-		bool did = geometry.intersect(ray, it, max_length);
-		it.set_coordinate_system();
-		return did;
-	}
-
-	inline bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
-			const Real epsilon = _SIGMA_VISIBILITY_) const
-	{
-		return geometry.intersect(ray, max_length - epsilon*m_scene_radius);;
-	}
-
-	inline bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2)const
-	{
-		return ~geometry.intersect(Ray<D>(v1, v2 - v1, true), (v2 - v1).length());
-	}
-
-	inline AABB<D> get_bounding_volume() const
-	{
-		return geometry.get_bounding_box();
-	}
 #endif // _USE_EMBREE_
-	//-----------------------------------------------------------
-	// World's Medium
-	inline void set_medium( Medium<D> *m )
+
+    Real time_of_flight(Real distance) const
 	{
-		medium = m;
-		Material<D>::set_default_medium(m);
+		return distance / light_speed; /* 0.000299792458f;*/
 	}
+};
 
-	inline void set_ior( Real n )
-	{
-		ior = n;
-		Material<D>::set_default_refraction_index(n);
-	}
-
-	inline Medium<D>* get_medium() const
-	{
-		return medium;
-	}
-
-	//-----------------------------------------------------------
-	// Return Light traveling through the ray.
-	// NOTE: Legacy code; this functions are deprecated. 
-	template<class IntegratorR>
-	RadianceSampleRecordR Li(Ray<D>& ray, IntegratorR *integrator) const
-	{
-		// Define the default medium parameters in the ray.
-		ray.set_medium(this->get_medium());
-		ray.set_refraction_index(this->get_ior());
-
-		// And intersect
-		Intersection<D> it;
-		first_intersection(ray, it);
-
-		Real dist = it.get_ray().get_parameter();
-		Radiance radiance = (*integrator)(ray);
-
-		return RadianceSampleRecordR(RadianceSampleR(radiance, 0.0, 0),
-					     dist, it.get_position(), it.get_normal());
-	}
-
-	template<class IntegratorR>
-	void Li(Ray<D>& ray, IntegratorR *integrator, RadianceSampleRecordVectorR& samples_rec,
-			Real delta_time = 0., int nb_time_samples = 0.) const
-	{
-		// Define the default medium parameters in the ray.
-		ray.set_medium(this->get_medium());
-		ray.set_refraction_index(this->get_ior());
-
-		// And intersect
-		Intersection<D> it;
-		first_intersection(ray, it);
-
-		samples_rec.distance = it.get_ray().get_parameter();
-		samples_rec.pos = it.get_position();
-		samples_rec.normal = it.get_normal();
-
-		(*integrator)(ray, samples_rec.samples, delta_time, nb_time_samples);
-	}
-	
-	template<class IntegratorR>
-	void Li(VectorN<D>& p, IntegratorR *integrator, std::vector<RadianceSampleR>& samples,
-			Real delta_time = 0., int nb_time_samples = 0.) const
-	{
-		// Computes radiance at a single point in the scene
-		(*integrator)(p, samples, delta_time);
-	}
-
-	// Returns time of flight in meters
-	Real time_of_flight(Real distance) const
-	{
-		return distance; /* 0.000299792458f;*/
-	}
-
-	// IOR 4 VRL
-	inline Real get_ior() const
-	{
-		return ior;
-	}
-}; // World
-
-#endif // _WORLD_H_
+#endif // _MOVINGWORLD_H_
