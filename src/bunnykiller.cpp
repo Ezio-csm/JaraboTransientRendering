@@ -688,6 +688,20 @@ void parse_args_from_mitsuba(tinyxml2::XMLDocument& doc, ProgramParams& p, World
 				}
 			}
 
+			Vector3f ele_vel = Vector3f(0, 0, 0);
+			tinyxml2::XMLElement* evel = e->FirstChildElement("vel");
+			if (evel != nullptr) {
+				ele_vel = Vector3f(atof(evel->Attribute("x")), atof(evel->Attribute("y")), atof(evel->Attribute("z")));
+			}
+
+			Real beg_time = 0;
+			Real end_time = 0;
+			tinyxml2::XMLElement* etime = e->FirstChildElement("time");
+			if (etime != nullptr) {
+				beg_time = atof(etime->Attribute("beg"));
+				end_time = atof(etime->Attribute("end"));
+			}
+
 			for (tinyxml2::XMLElement* eobj = e->FirstChildElement("string"); eobj != nullptr;
 					eobj = eobj->NextSiblingElement("string")) {
 				if (!strcmp("filename", eobj->Attribute("name"))) {
@@ -703,7 +717,7 @@ void parse_args_from_mitsuba(tinyxml2::XMLDocument& doc, ProgramParams& p, World
 					ss << filename << fname;
 					std::string realRoute = ss.str();
 #ifdef _USE_EMBREE_
-					w.add_triangle_mesh(realRoute, mat);
+					w.add_triangle_mesh(realRoute, mat, ele_vel, beg_time, end_time);
 #else
 					Mesh *m = new Mesh(realRoute, mat);
 					w.add_object(Object3DPointer(m));
