@@ -43,20 +43,14 @@
 	<shape type="obj">
 		<string name="filename" value="sphere1.obj"/>
 		<ref id="mirror"/>
-		<float name="vel_x" value="0.5">
-		<float name="vel_y" value="0.0">
-		<float name="vel_z" value="0.0">
-		<float name="beg_time" value="0">
-		<float name="end_time" value="30">
+		<vel x="0.5" y="0.0" z="0.0"/>
+		<time beg="0" end="30"/>
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere2.obj"/>
 		<ref id="glass"/>
-		<float name="vel_x" value="0.0">
-		<float name="vel_y" value="0.5">
-		<float name="vel_z" value="0.5">
-		<float name="beg_time" value="0">
-		<float name="end_time" value="30">
+		<vel x="0.0" y="0.5" z="0.5"/>
+		<time beg="0" end="30"/>
 	</shape>
 	<sensor type="perspective">
 		<float name="fov" value="42.13"/>
