@@ -1532,8 +1532,8 @@ int main(int argc, char* argv[])
 
 	// WORLD
 #ifdef _MOVING_WORLD_
-	World<DIM, Radiance> w = MovingWorld<DIM, Radiance>();
-#elif
+	MovingWorld<DIM, Radiance> w = MovingWorld<DIM, Radiance>();
+#else
 	World<DIM, Radiance> w = World<DIM, Radiance>();
 #endif
 
@@ -1698,7 +1698,7 @@ int main(int argc, char* argv[])
 
 #ifdef _MOVING_WORLD_
 	TimesliceSampler sampler(p.width, p.height, p.sqrt_spp, p.time, p.time_resolution);
-#elif
+#else
 	StratifiedSampler sampler(p.width, p.height, p.sqrt_spp, true);
 #endif
 	
@@ -1731,7 +1731,7 @@ int main(int argc, char* argv[])
 	engine = new MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>(f_log, p.time_sampling);
 	static_cast<MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>*>(engine)->set_sensor_mode(
 			sensor_mode);
-#elif
+#else
 	if (p.transient) {
 		// If rendering in transient state...
 		// ...create streak-camera film...
