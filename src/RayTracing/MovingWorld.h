@@ -41,8 +41,8 @@ public:
 	//-----------------------------------------------------------
 	// Geometry
 #ifdef _USE_EMBREE_
-	void add_triangle_mesh(const std::string &name_file, Material3D *mat, const VectorN<D> &velocity,
-            Real start_time = 0, Real end_time = std::numeric_limits<Real>::infinity())
+	virtual void add_triangle_mesh(const std::string &name_file, Material3D *mat, const VectorN<D> &velocity,
+            Real start_time = 0, Real end_time = std::numeric_limits<Real>::infinity()) override
 	{
 		if(velocity == VectorN<D>(0))
 		{
@@ -386,9 +386,10 @@ public:
 
 		/* Set mesh user data */
 		rtcSetUserData(new_obj.g_scene, rtc_mesh, (void *)mat);
+		objects.push_back(new_obj);
 	}
 
-	inline void freeze()
+	virtual void freeze() override
 	{
 		/* commit changes to scene */
 		rtcCommit(World::g_scene);
@@ -399,7 +400,7 @@ public:
 			light_source_list[i]->setup();
 	}
 
-	inline AABB<D> get_bounding_volume() const
+	virtual AABB<D> get_bounding_volume() const override
 	{
 		RTCBounds rtc_bounds;
 		rtcGetBounds(World::g_scene, rtc_bounds);
@@ -419,11 +420,12 @@ public:
 		                                     rtc_bounds.upper_y,
 		                                     rtc_bounds.upper_z)));
         }
+		return res;
 	}
 
 	// Return the object that first intersects `ray'
-	inline bool first_intersection(Ray<D>& ray, Intersection<D> &it,
-			const Real &max_length = std::numeric_limits<Real>::infinity(), bool reverse_time = false) const
+	virtual bool first_intersection(Ray<D>& ray, Intersection<D> &it,
+			const Real &max_length = std::numeric_limits<Real>::infinity(), bool reverse_time = false) const override
 	{
 		float flag = reverse_time ? -1. : 1.;
 		/* Initialize ray */
@@ -494,8 +496,8 @@ public:
 		return false;
 	}
 
-	inline bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
-			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
+	virtual bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
+			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const override
 	{
 		float flag = reverse_time ? -1. : 1.;
 		/* initialize ray */
@@ -539,53 +541,53 @@ public:
 		return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
 	}
 
-	inline bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
-			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
-	{
-		float flag = reverse_time ? -1. : 1.;
-		/* initialize ray */
-		RTCRay rtc_ray;
-		// Ray origin
-		rtc_ray.org[0] = (float)v1[0];
-		rtc_ray.org[1] = (float)v1[1];
-		rtc_ray.org[2] = (float)v1[2];
-		rtc_ray.dir[0] = (float)(v2 - v1)[0];
-		rtc_ray.dir[1] = (float)(v2 - v1)[1];
-		rtc_ray.dir[2] = (float)(v2 - v1)[2];
-		rtc_ray.tnear = (float)epsilon;
-		rtc_ray.tfar = (float)((v2 - v1).length() - epsilon);
-		rtc_ray.time = 0.f; // Time for motion blur
-		rtc_ray.mask = 0XFFFFFFFF;
-		rtc_ray.geomID = RTC_INVALID_GEOMETRY_ID;
-		rtc_ray.primID = RTC_INVALID_GEOMETRY_ID;
+	// virtual bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
+	// 		const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const override
+	// {
+	// 	float flag = reverse_time ? -1. : 1.;
+	// 	/* initialize ray */
+	// 	RTCRay rtc_ray;
+	// 	// Ray origin
+	// 	rtc_ray.org[0] = (float)v1[0];
+	// 	rtc_ray.org[1] = (float)v1[1];
+	// 	rtc_ray.org[2] = (float)v1[2];
+	// 	rtc_ray.dir[0] = (float)(v2 - v1)[0];
+	// 	rtc_ray.dir[1] = (float)(v2 - v1)[1];
+	// 	rtc_ray.dir[2] = (float)(v2 - v1)[2];
+	// 	rtc_ray.tnear = (float)epsilon;
+	// 	rtc_ray.tfar = (float)((v2 - v1).length() - epsilon);
+	// 	rtc_ray.time = 0.f; // Time for motion blur
+	// 	rtc_ray.mask = 0XFFFFFFFF;
+	// 	rtc_ray.geomID = RTC_INVALID_GEOMETRY_ID;
+	// 	rtc_ray.primID = RTC_INVALID_GEOMETRY_ID;
 
-		RTCRay static_rtc_ray = rtc_ray;
-		rtcOccluded(World::g_scene, rtc_ray);
-        for(auto obj : objects)
-        {
-            RTCRay t_rtc_ray = static_rtc_ray;
-            VectorN<D> origin = ray.get_origin();
-            Real moving_time = ray.get_start_time() - obj.start_time;
-            origin = origin + obj.velocity * moving_time;
-            t_rtc_ray.org[0] = (float)origin[0];
-            t_rtc_ray.org[1] = (float)origin[1];
-            t_rtc_ray.org[2] = (float)origin[2];
-            VectorN<D> dir = ray.get_direction();
-            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
-            t_rtc_ray.dir[0] = (float)dir[0];
-            t_rtc_ray.dir[1] = (float)dir[1];
-            t_rtc_ray.dir[2] = (float)dir[2];
-            rtcOccluded(obj.g_scene, t_rtc_ray);
-            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
-            if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
-                rtc_ray = t_rtc_ray;
-        }
+	// 	RTCRay static_rtc_ray = rtc_ray;
+	// 	rtcOccluded(World::g_scene, rtc_ray);
+    //     for(auto obj : objects)
+    //     {
+    //         RTCRay t_rtc_ray = static_rtc_ray;
+    //         VectorN<D> origin = v1;
+    //         Real moving_time = ray.get_start_time() - obj.start_time;
+    //         origin = origin + obj.velocity * moving_time;
+    //         t_rtc_ray.org[0] = (float)origin[0];
+    //         t_rtc_ray.org[1] = (float)origin[1];
+    //         t_rtc_ray.org[2] = (float)origin[2];
+    //         VectorN<D> dir = ray.get_direction();
+    //         dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
+    //         t_rtc_ray.dir[0] = (float)dir[0];
+    //         t_rtc_ray.dir[1] = (float)dir[1];
+    //         t_rtc_ray.dir[2] = (float)dir[2];
+    //         rtcOccluded(obj.g_scene, t_rtc_ray);
+    //         Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+    //         if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
+    //             rtc_ray = t_rtc_ray;
+    //     }
 
-		return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
-	}
+	// 	return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
+	// }
 #endif // _USE_EMBREE_
 
-    Real time_of_flight(Real distance) const
+    virtual Real time_of_flight(Real distance) const override
 	{
 		return distance / light_speed; /* 0.000299792458f;*/
 	}

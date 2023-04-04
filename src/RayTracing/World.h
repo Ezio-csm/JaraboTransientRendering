@@ -546,7 +546,7 @@ public:
 		rtcSetUserData(g_scene, rtc_mesh, (void *)mat);
 	}
 
-	inline void freeze()
+	virtual void freeze()
 	{
 		/* commit changes to scene */
 		rtcCommit(g_scene);
@@ -555,7 +555,7 @@ public:
 			light_source_list[i]->setup();
 	}
 
-	inline AABB<D> get_bounding_volume() const
+	virtual AABB<D> get_bounding_volume() const
 	{
 		RTCBounds rtc_bounds;
 		rtcGetBounds(g_scene, rtc_bounds);
@@ -569,7 +569,7 @@ public:
 	}
 
 	// Return the object that first intersects `ray'
-	inline bool first_intersection(Ray<D>& ray, Intersection<D> &it,
+	virtual bool first_intersection(Ray<D>& ray, Intersection<D> &it,
 			const Real &max_length = std::numeric_limits<Real>::infinity(), bool reverse_time = false) const
 	{
 		/* Initialize ray */
@@ -620,7 +620,7 @@ public:
 		return false;
 	}
 
-	inline bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
+	virtual bool intersects(Ray<D> &ray, const Real &max_length = std::numeric_limits<Real>::infinity(),
 			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
 		/* initialize ray */
@@ -644,7 +644,7 @@ public:
 		return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
 	}
 
-	inline bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
+	virtual bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
 			const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const
 	{
 		/* initialize ray */
@@ -780,13 +780,13 @@ public:
 	}
 
 	// Returns time of flight in meters
-	Real time_of_flight(Real distance) const
+	virtual Real time_of_flight(Real distance) const
 	{
 		return distance; /* 0.000299792458f;*/
 	}
 
 	// IOR 4 VRL
-	inline Real get_ior() const
+	virtual Real get_ior() const
 	{
 		return ior;
 	}
