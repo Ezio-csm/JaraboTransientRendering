@@ -24,7 +24,7 @@
 		<float name="n0" value="1"/>
 		<float name="absorp" value="0.01"/>
 	</bsdf>
-	<!-- <shape type="obj">
+	<shape type="obj">
 		<string name="filename" value="cornell_white.obj"/>
 		<ref id="grey"/>
 	</shape>
@@ -39,7 +39,7 @@
 	<shape type="obj">
 		<string name="filename" value="cornell_blue.obj"/>
 		<ref id="blue"/>
-	</shape> -->
+	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere1.obj"/>
 		<ref id="mirror"/>
@@ -58,11 +58,11 @@
 			<integer name="sampleCount" value="1"/>
 		</sampler>
 		<film type="hdrfilm">
-			<integer name="width" value="40"/>
-			<integer name="height" value="30"/>
-			<integer name="time" value="10"/>
+			<integer name="width" value="200"/>
+			<integer name="height" value="150"/>
+			<integer name="time" value="400"/>
 			
-			<float name="timeResolution" value="10"/>
+			<float name="timeResolution" value="0.1"/>
 			<boolean name="steadyState" value="false"/>
 		</film>
 		<transform type="toWorld">

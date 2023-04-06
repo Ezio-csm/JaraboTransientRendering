@@ -123,7 +123,7 @@ public:
 		/* We iterate over all pixels */
 		std::vector<Real> temporal_samples;
 
-		unsigned int t = (unsigned int) (std::floor(sample.current_time));
+		unsigned int t = (unsigned int) (std::floor(sample.current_time / m_exposure_time));
 		/* Check if new timeline is needed */
 		while (t > m_last_available_slice) {
 			average_and_save_slice(m_first_available_slice, FTR::m_name.c_str());
@@ -257,6 +257,8 @@ void TimesliceFilm<D, Radiance>::add_temporal_sample(const RadianceSampleR& r, R
 	unsigned int x, unsigned int y, Real tr, Real ts, bool filtered)
 {
 	size_t index = (size_t)std::floor(ts) - m_first_available_slice;
+	if(index >= m_available_slices.size())
+		return;
 
 	Radiance rad = r.radiance;
 

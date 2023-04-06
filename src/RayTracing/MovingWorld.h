@@ -446,6 +446,7 @@ public:
 
         RTCRay static_rtc_ray = rtc_ray;
 		rtcIntersect(World::g_scene, rtc_ray);
+		RTCScene use_scene = World::g_scene;
         for(auto obj : objects)
         {
             RTCRay t_rtc_ray = static_rtc_ray;
@@ -463,19 +464,22 @@ public:
             rtcIntersect(obj.g_scene, t_rtc_ray);
             Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
             if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
+			{
                 rtc_ray = t_rtc_ray;
+				use_scene = obj.g_scene;
+			}
         }
 
 		if (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID){
 			Vector2f uv_aux;
-			rtcInterpolate2(World::g_scene, rtc_ray.geomID, rtc_ray.primID,
+			rtcInterpolate2(use_scene, rtc_ray.geomID, rtc_ray.primID,
 				rtc_ray.u, rtc_ray.v, RTC_USER_VERTEX_BUFFER1,
 				(float*)&uv_aux, nullptr, nullptr, nullptr, nullptr, nullptr, 2);
 
 			Vector2 uv(uv_aux[0], uv_aux[1]);
 
 			Vector3f normal_aux;
-			rtcInterpolate2(World::g_scene, rtc_ray.geomID, rtc_ray.primID,
+			rtcInterpolate2(use_scene, rtc_ray.geomID, rtc_ray.primID,
 				rtc_ray.u, rtc_ray.v, RTC_USER_VERTEX_BUFFER0,
 				(float*)&normal_aux, nullptr, nullptr, nullptr, nullptr, nullptr, 3);
 
