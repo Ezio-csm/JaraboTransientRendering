@@ -743,7 +743,7 @@ public:
 
 		// And intersect
 		Intersection<D> it;
-		first_intersection(ray, it);
+		first_intersection(ray, it, std::numeric_limits<float>::infinity(), true);
 
 		Real dist = it.get_ray().get_parameter();
 		Radiance radiance = (*integrator)(ray);
@@ -762,7 +762,9 @@ public:
 
 		// And intersect
 		Intersection<D> it;
-		first_intersection(ray, it);
+		first_intersection(ray, it, std::numeric_limits<float>::infinity(), true);
+		if(ray.get_start_time() - time_of_flight(ray.get_parameter()) * ray.get_ior() < 0)
+			return;
 
 		samples_rec.distance = it.get_ray().get_parameter();
 		samples_rec.pos = it.get_position();

@@ -142,7 +142,8 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		}
 
 		// ...and finally store the samples in the film
-		film->add_samples(film_sample, samples_rec);
+		if(samples_rec.samples.size() > 0)
+			film->add_samples(film_sample, samples_rec);
 
 		// No point on shrinking
 		samples_rec.samples.reserve(samples_rec.samples.capacity());

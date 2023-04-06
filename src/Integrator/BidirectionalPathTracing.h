@@ -452,8 +452,6 @@ bool BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::sample_terminat
 
 	if (nb_bounces > m_max_path_size)
 		return true;
-	if (time < 0.)
-		return true;
 
 	switch (m_termination_sampling_technique) {
 		case TerminationSampling::NbBounces:
@@ -556,7 +554,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::generate_path(c
 		// Trace next ray
 		curr_it = Intersection<D>();
 		curr_ray.set_start_time(time);
-		this->m_world.first_intersection(curr_ray, curr_it, reverse_time);
+		this->m_world.first_intersection(curr_ray, curr_it, std::numeric_limits<float>::infinity(), reverse_time);
 
 		// Test if there's a scattering event in media or surfaces. If not then the
 		// path is finished...
