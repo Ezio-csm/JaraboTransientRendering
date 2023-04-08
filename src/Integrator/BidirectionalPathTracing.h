@@ -508,6 +508,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::generate_path(c
 
 	Real p = 1., pi = p0;
 	Real time = t0;
+	Real delay = 0.;
 
 	// Variables used through the loop
 	RadianceAttenuation fa(1.);
@@ -617,6 +618,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::generate_path(c
 			time -= ta + ITR::m_world.time_of_flight(sampled_distance)*curr_ray.get_ior();
 		else
 			time += ta + ITR::m_world.time_of_flight(sampled_distance)*curr_ray.get_ior();
+		delay += ta + ITR::m_world.time_of_flight(sampled_distance)*curr_ray.get_ior();
 
 		// -----------------------------------------------------------------------------------------
 		// Store vertex
@@ -624,7 +626,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::generate_path(c
 			position = curr_ray.get_origin() + curr_ray.get_direction() * sampled_distance;
 
 			path.add_media_vertex(position, curr_ray.get_direction(), curr_ray.get_medium(), f, p, pi,
-					time);
+					delay);
 			
 			scat_albedo = (u_s / u_t);
 		} else {
@@ -632,7 +634,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::generate_path(c
 
 			if (!curr_it.material()->is_type(Reflectance::DELTA)) {
 				path.add_surface_vertex(position, curr_ray.get_direction(), curr_it.get_normal(),
-						curr_it.get_uv(), curr_it.material(), curr_ray.get_medium(), f, p, pi, time);
+						curr_it.get_uv(), curr_it.material(), curr_ray.get_medium(), f, p, pi, delay);
 			}
 
 			scat_albedo = (1. - curr_it.material()->get_absorption(curr_it));
