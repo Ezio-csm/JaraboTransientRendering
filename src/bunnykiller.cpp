@@ -1847,7 +1847,11 @@ int main(int argc, char* argv[])
 #else
 	typedef BidirectionalPathTracing<DIM, Radiance, RadianceAttenuation> BPT;
 	BPT bpt(w, p.vol_path_tracing_samples, f_log, film.get());
-	printf("Rendering with Bidirectional Path Tracing...\n");
+	#ifdef _USE_BDPT_
+	bpt.set_path_tracing_only(0);
+	printf("Bidirectional activated..\n");
+	#endif
+	printf("Rendering with Path Tracing...\n");
 #endif
 
 	bpt.set_max_path_size(p.max_nb_bounces);
