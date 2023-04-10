@@ -74,6 +74,8 @@ public:
 	virtual bool sample(const Intersection<D> &it, LightSample<D, Radiance> &light_sample, Real &pdf) const;
 
 	virtual void sample(LightSample<D, Radiance> &light_sample, Real &pdf) const;
+
+	virtual bool sample_reverse(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf, Real t) const;
 	
 	virtual bool sample(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf) const;
 
@@ -152,6 +154,39 @@ bool PointLightSource<D, Radiance>::sample(const VectorN<D> &p, LightSample<D, R
 	/* Check visibility */
 	Ray<D> ray(light_sample.pos, light_sample.dir, false);
 	if (this->world->intersects(ray, light_sample.dist)) {
+		return false;
+	}
+
+	Real att(0.);
+	if (D == 2)
+		att = 1. / light_sample.dist;
+	if (D == 3)
+		att = 1. / distance2;
+
+	light_sample.irradiance = LS::intensities * att;
+	set_direction(light_sample.dir, light_sample.irradiance);
+	light_sample.instant = LS::time;
+
+	pdf = 1.;
+
+	return true;
+}
+
+template<unsigned D, class Radiance>
+bool PointLightSource<D, Radiance>::sample_reverse(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf, Real t) const
+{
+	light_sample.irradiance = 0.;
+	light_sample.pos = position;
+	light_sample.dir = p - position;
+
+	Real distance2 = light_sample.dir.length2();
+	light_sample.dist = std::sqrt(distance2);
+	light_sample.dir /= light_sample.dist;
+
+	/* Check visibility */
+	Ray<D> ray(p, -light_sample.dir, false, t);
+	if (this->world->intersects(ray, light_sample.dist, _SIGMA_VISIBILITY_, true) || 
+		t - (this->world->time_of_flight(light_sample.dist) * this->world->get_ior()) < 0) {
 		return false;
 	}
 

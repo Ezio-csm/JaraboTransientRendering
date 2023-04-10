@@ -78,6 +78,8 @@ public:
 
 	/** Sample the light source randomly, so it gives an origin to light-tracing algorithms */
 	virtual void sample(LightSample<D, Radiance> &light_sample, Real &pdf) const = 0;
+
+	virtual bool sample_reverse(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf, Real t) const = 0;
 	
 	/** Sample the light accordingly to a point in space.
 		Returns false if the light is not visible from it */
@@ -88,7 +90,6 @@ public:
 	virtual void setup() {}
 
 }; //LightSource
-
 
 #endif //_LIGHTSOURCE_H_
 

@@ -1273,9 +1273,9 @@ inline void parse_args(int argc, char* argv[], ProgramParams& p, World<DIM, Radi
 				tex = new Texture(Imaging::load<Real>(argv[i++]));
 			}
 
-			w.add_light(
-					new RectangularAreaLightSource<Radiance>(&w, pos, (dir - pos).normalized(),
-							size, intensity, tex));
+			// w.add_light(
+			// 		new RectangularAreaLightSource<Radiance>(&w, pos, (dir - pos).normalized(),
+			// 				size, intensity, tex));
 			continue;
 		}
 		if (!strcmp("-directional-light-source", argv[i])) {
@@ -1285,11 +1285,11 @@ inline void parse_args(int argc, char* argv[], ProgramParams& p, World<DIM, Radi
 			dir.normalize();
 			Radiance intensity(atof(argv[i++]));
 
-#ifdef _POLARIZATION_
-			w.add_light(new DirectionalLightSource<3, Radiance>(&w, dir, intensity));
-#else
-			w.add_light(new DirectionalLightSource<3, Radiance>(&w, dir, intensity));
-#endif
+// #ifdef _POLARIZATION_
+// 			w.add_light(new DirectionalLightSource<3, Radiance>(&w, dir, intensity));
+// #else
+// 			w.add_light(new DirectionalLightSource<3, Radiance>(&w, dir, intensity));
+// #endif
 			continue;
 		}
 
