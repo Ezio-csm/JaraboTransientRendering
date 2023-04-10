@@ -256,9 +256,10 @@ template<unsigned D, class Radiance>
 void TimesliceFilm<D, Radiance>::add_temporal_sample(const RadianceSampleR& r, Real w,
 	unsigned int x, unsigned int y, Real tr, Real ts, bool filtered)
 {
-	size_t index = (size_t)std::floor(ts) - m_first_available_slice;
-	if(index >= m_available_slices.size())
-		return;
+	// size_t index = (size_t)std::floor(ts) - m_first_available_slice;
+	// if(index >= m_available_slices.size())
+	// 	return;
+	size_t index = 0u;
 
 	Radiance rad = r.radiance;
 
