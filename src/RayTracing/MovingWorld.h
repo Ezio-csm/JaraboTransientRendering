@@ -452,7 +452,7 @@ public:
             RTCRay t_rtc_ray = static_rtc_ray;
             VectorN<D> origin = ray.get_origin();
             Real moving_time = ray.get_start_time() - obj.start_time;
-            origin = origin + obj.velocity * moving_time;
+            origin = origin - obj.velocity * moving_time;
             t_rtc_ray.org[0] = (float)origin[0];
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
@@ -489,7 +489,7 @@ public:
 			ray.set_parameter(rtc_ray.tfar);
 
 			// Store intersection information
-			const Material<D>* mat = (const Material<D>*)rtcGetUserData(g_scene, rtc_ray.geomID);
+			const Material<D>* mat = (const Material<D>*)rtcGetUserData(use_scene, rtc_ray.geomID);
 
 			it.set(ray, mat, normal, uv);
 			it.set_coordinate_system();
@@ -527,7 +527,7 @@ public:
             RTCRay t_rtc_ray = static_rtc_ray;
             VectorN<D> origin = ray.get_origin();
             Real moving_time = ray.get_start_time() - obj.start_time;
-            origin = origin + obj.velocity * moving_time;
+            origin = origin - obj.velocity * moving_time;
             t_rtc_ray.org[0] = (float)origin[0];
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
