@@ -1,7 +1,6 @@
 <scene>
-	<integrator type="ppm">
-		<integer name="lookupSize" value="50"/>
-		<integer name="globalPhotons" value="10000"/>
+	<integrator type="bdpt">
+		<integer name="samples" value="3"/>
 	</integrator>
 	<bsdf type="diffuse" id="blue">
 		<srgb value="#3333DD"/>
@@ -15,7 +14,7 @@
 	<bsdf type="diffuse" id="red">
 		<srgb value="#DD3333"/>
 	</bsdf>
-	<bsdf type="conductor" id="mirror">
+	<!-- <bsdf type="conductor" id="mirror">
 		<spectrum name="eta" value="0.15016"/>
 		<spectrum name="k" value="3.4727"/>
 	</bsdf>
@@ -23,14 +22,14 @@
 		<float name="n1" value="1.5"/>
 		<float name="n0" value="1"/>
 		<float name="absorp" value="0.01"/>
-	</bsdf>
+	</bsdf> -->
 	<shape type="obj">
 		<string name="filename" value="cornell_white.obj"/>
 		<ref id="grey"/>
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="cornell_floor.obj"/>
-		<ref id="mirror"/>
+		<ref id="grey"/>
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="cornell_red.obj"/>
@@ -55,11 +54,11 @@
 	<sensor type="perspective">
 		<float name="fov" value="42.13"/>
 		<sampler>
-			<integer name="sampleCount" value="1"/>
+			<integer name="sampleCount" value="3"/>
 		</sampler>
 		<film type="hdrfilm">
-			<integer name="width" value="200"/>
-			<integer name="height" value="150"/>
+			<integer name="width" value="500"/>
+			<integer name="height" value="400"/>
 			<integer name="time" value="400"/>
 			
 			<float name="timeResolution" value="0.1"/>
@@ -70,7 +69,7 @@
 		</transform>
 	</sensor>
 	<emitter type="point">
-		<rgb type="intensity" value="10, 10, 8"/>
+		<rgb type="intensity" value="100, 100, 80"/>
 		<point x="0" y="5.5" z="0"/>
 	</emitter>
 </scene>

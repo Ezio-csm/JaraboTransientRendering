@@ -108,6 +108,9 @@ protected:
 	bool connect_vertex_with_light(const VertexR& eye_vertex, Radiance &f, Real &p,
 			Real *time = nullptr) const;
 
+	bool connect_vertex_with_light_reverse(const VertexR& eye_vertex, Radiance &f, Real &p,
+			Real time) const;
+
 	bool connect_vertices(const VertexR& eye_vertex, const VertexR& light_vertex,
 			RadianceAttenuation &f, Real *time = nullptr, Real *pdf_time = nullptr) const;
 
@@ -117,6 +120,9 @@ protected:
 	Radiance connect_paths(const PathR &eye_path, const PathR &light_path) const;
 
 	void connect_paths(const PathR &eye_path, const PathR &light_path, RadSampleList &samples,
+			const Real delta_time, const unsigned int nb_time_samples) const;
+
+	void connect_paths(const Real camera_time, const PathR &eye_path, RadSampleList &samples, 
 			const Real delta_time, const unsigned int nb_time_samples) const;
 public:
 	BidirectionalPathTracing(World<D, Radiance>& w, unsigned int incoming_samples = 1,
@@ -697,6 +703,38 @@ bool BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::connect_vertex_
 	}
 }
 
+template<unsigned D, class Radiance, class RadianceAttenuation>
+bool BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::connect_vertex_with_light_reverse(
+		const VertexR& eye_vertex, Radiance &f, Real &p, Real t) const
+{
+	LightSample<D, Radiance> light_sample;
+	Real pl1 = 1., pl2 = 1.;
+
+	const VectorN<D>& vertex_position = eye_vertex.get_vertex_position();
+
+	if (ITR::m_world.sample_light(pl1)->sample_reverse(vertex_position, light_sample, pl2, t)) {
+		RadianceAttenuation fe;
+
+		Real pe = 1.;
+		eye_vertex.compute_scattering(-light_sample.dir, fe);
+
+		// Compute attenuation if needed
+		Spectrum att = eye_vertex.compute_attenuation(
+				Ray<D>(light_sample.dist, light_sample.pos, light_sample.dir));
+
+		set_attenuation_tracing_direction(TraceDirection::FROM_EYE, fe);
+
+		f = fe * (light_sample.irradiance * att);
+		p = pl1 * pl2 * pe;
+
+		return true;
+	} else {
+		f = Radiance(0.);
+		p = 1.;
+		return false;
+	}
+}
+
 //=============================================================================
 // Connect two vertices
 template<unsigned D, class Radiance, class RadianceAttenuation>
@@ -1050,6 +1088,54 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::connect_paths(
 	}
 }
 
+template<unsigned D, class Radiance, class RadianceAttenuation>
+void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::connect_paths(const Real camera_time,
+		const PathR &eye_path, RadSampleList &samples, const Real, const unsigned int) const
+{
+	Radiance f;
+	RadianceAttenuation fv(0.);
+	Real p = 1.0;
+	Real w = 1.0;
+	Real t = camera_time;
+
+	Real total_time = ITR::m_film->get_time_length();
+	
+	// Iterate over all eye vertices
+	for (size_t ie = 0; ie < eye_path.size(); ie++) {
+		// If the current vertex delay is longer than the m_film, all its events
+		// and these in the subsequent vertices of the path will happen outside
+		// the sensor window.
+		if (eye_path[ie].get_subpath_delay() > total_time)
+			return;
+
+		if ((ie + 1) > m_max_path_size)
+			return;
+
+		RadianceAttenuation fe = eye_path[ie].get_vertex_value();
+
+		// First vertex of light path is the light source.
+		// Following [Veach 95] we avoid correlation by randomly sampling the direct light
+		// for each vertex of the eye path.
+		bool connected = connect_vertex_with_light_reverse(eye_path[ie], f, p, t);
+
+		if (connected && ((ITR::m_components & Scattering::Level::SINGLE) || ie > 0)) {
+			f = fe * f;
+			p *= eye_path[ie].get_subpath_pdf();
+
+			samples.push_back(RadianceSampleR(f / p * ITR::m_inv_incoming_samples, 0, ie));
+		} else if (m_keep_track_sample_count) {
+
+			samples.push_back(RadianceSampleR(Radiance(0.), 0, ie));
+		}
+		
+		if (!(ITR::m_components & Scattering::Level::MULTIPLE))
+			break;
+
+		t = camera_time - eye_path[ie].get_subpath_delay();
+		// Iterate over all light vertices
+	}
+}
+
 //=============================================================================
 // Computes the light transport from an initial camera-sampled ray r.
 template<unsigned D, class Radiance, class RadianceAttenuation>
@@ -1112,6 +1198,8 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::operator()(cons
     unsigned n_eye = std::min<unsigned>(m_max_path_size, (unsigned) (MAX_BPT_VERTICES));
 	unsigned n_light = (!m_path_trace_only) ? n_eye : 0;
 
+	Real camera_time = r.get_start_time();
+
 	PathR eye_path(n_eye), light_path(n_light);
 
 	for (size_t sample = 0; sample < ITR::m_incoming_samples; sample++) {
@@ -1137,7 +1225,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::operator()(cons
 		}
 
 		// Connect vertices
-		connect_paths(eye_path, light_path, samples, delta_time, nb_time_samples);
+		connect_paths(camera_time, eye_path, samples, delta_time, nb_time_samples);
 
 		// Clear paths
 		eye_path.clear();
