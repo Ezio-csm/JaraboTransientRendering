@@ -763,6 +763,8 @@ public:
 		// And intersect
 		Intersection<D> it;
 		first_intersection(ray, it, std::numeric_limits<float>::infinity(), true);
+		if(!it.did_hit())
+			return;
 	#ifdef _MOVING_WORLD_
 		if(ray.get_start_time() - time_of_flight(ray.get_parameter()) * ray.get_ior() < 0)
 			return;
