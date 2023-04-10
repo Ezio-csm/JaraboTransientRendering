@@ -1,6 +1,6 @@
 <scene>
 	<integrator type="ppm">
-		<integer name="lookupSize" value="50"/>
+		<integer name="lookupSize" value="100"/>
 		<integer name="globalPhotons" value="10000"/>
 	</integrator>
 	<bsdf type="diffuse" id="blue">
@@ -42,14 +42,14 @@
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere1.obj"/>
-		<ref id="mirror"/>
-		<vel x="0.5" y="0.0" z="0.0"/>
+		<ref id="red"/>
+		<vel x="0.05" y="0.0" z="0.0"/>
 		<time beg="0" end="30"/>
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere2.obj"/>
-		<ref id="glass"/>
-		<vel x="0.0" y="0.5" z="0.5"/>
+		<ref id="blue"/>
+		<vel x="0.0" y="0.05" z="0.05"/>
 		<time beg="0" end="30"/>
 	</shape>
 	<sensor type="perspective">
@@ -70,7 +70,7 @@
 		</transform>
 	</sensor>
 	<emitter type="point">
-		<rgb type="intensity" value="10, 10, 8"/>
+		<rgb type="intensity" value="1000, 1000, 800"/>
 		<point x="0" y="5.5" z="0"/>
 	</emitter>
 </scene>

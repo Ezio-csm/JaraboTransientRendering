@@ -23,7 +23,7 @@ protected:
 	using RadianceSampleRecordR = typename FTR::RadianceSampleRecordR;
 	using RadianceSampleRecordVectorR = typename FTR::RadianceSampleRecordVectorR;
 protected:
-	size_t m_time_num;
+	size_t m_frame_num;
 	Real m_exposure_time;
 	Real m_offset;
 
@@ -39,6 +39,9 @@ protected:
 	/* Buffers for optional variance estimation */
 	std::vector<Imaging::Image<Real>> m_available_slices_variance;
 	std::vector<Imaging::Image<Real>> m_available_slices_nsamples;
+
+	/* Weight buffer for every slice*/
+	std::vector<Imaging::Image<Real>> m_weight_slices;
 protected:
 	void advance_timeline();
 
@@ -57,7 +60,7 @@ protected:
 			int t = (int) (std::floor(x));
 
 			unsigned int init_t = std::max<int>(0, t - half_size);
-			unsigned int end_t = std::min<int>(t + half_size, int(m_time_num - 1));
+			unsigned int end_t = std::min<int>(t + half_size, int(m_frame_num - 1));
 
 			for (size_t i = init_t; i <= end_t; i++) {
 				samples.push_back(Real(i) + .5);
@@ -70,7 +73,7 @@ public:
 		bool camera_unwarp = false, Filter*_filter = nullptr,
 		FilmComponents comp = FilmComponents::RADIANCE) :
 			FTR(w, h, _filter, comp),
-			m_time_num(t),
+			m_frame_num(t),
 			m_exposure_time(exposure),
 			m_offset(0.),
 			camera_unwarp(camera_unwarp),
@@ -78,7 +81,7 @@ public:
 			m_first_available_slice(0),
 			m_last_available_slice(0)
 	{
-		size_t available_slices = ((FTR::m_filter) ? FTR::m_filter->get_size() : 1);
+		size_t available_slices = ((time_filter) ? time_filter->get_size() : 1);
 
 		for (size_t i = 0; i < available_slices; i++) {
 
@@ -103,7 +106,7 @@ public:
 
 	virtual unsigned int get_time_resolution() const override
 	{
-		return m_time_num;
+		return m_frame_num;
 	}
 
 	virtual void add_sample(const Sample& sample, const RadianceSampleRecordR& rec) override
@@ -118,52 +121,45 @@ public:
 
 		/* First the pixel coverage is calculated */
 		std::vector<Vector2> film_samples;
-		FTR::get_film_samples(sample.position, film_samples);
-
-		/* We iterate over all pixels */
 		std::vector<Real> temporal_samples;
+		FTR::get_film_samples(sample.position, film_samples);
+		get_film_samples(sample.current_time, 2, temporal_samples);
 
-		unsigned int t = (unsigned int) (std::floor(sample.current_time / m_exposure_time));
-		/* Check if new timeline is needed */
-		while (t > m_last_available_slice) {
-			average_and_save_slice(m_first_available_slice, FTR::m_name.c_str());
-			advance_timeline();
-		}
-		for (const Vector2& s : film_samples) {
-			unsigned int x = (unsigned int) (std::floor(s[0]));
-			unsigned int y = (unsigned int) (std::floor(s[1]));
+		for (const Real& sample_t : temporal_samples) {
+			unsigned int t = (unsigned int) (std::floor(sample_t));
+			while (t > m_last_available_slice) {
+				average_and_save_slice(m_first_available_slice, FTR::m_name.c_str());
+				advance_timeline();
+			}
+			size_t index = t - m_first_available_slice;
 
-			/* Apply spatial filter */
-			Real w = FTR::m_filter->evaluate(s - sample.position) * sample.weight;
-			FTR::m_weight.add(x, y, &w);
+			for (const Vector2& s : film_samples) {
+				unsigned int x = (unsigned int) (std::floor(s[0]));
+				unsigned int y = (unsigned int) (std::floor(s[1]));
 
-			/* Iterate over samples */
-			for (const RadianceSampleR& r : rec.samples) {
-				/* Calculate sample's time coordinate */
-				Real cam_time = camera_unwarp ? (r.time - rec.distance) : r.time;
-				Real pos_sensor = (cam_time - m_offset)/ m_exposure_time;
+				/* Apply spatial filter */
+				Real w = FTR::m_filter->evaluate(s - sample.position) * sample.weight;
+				m_weight_slice[index].add(x, y, &w);
 
-				/* If out of the range of the sensor, discard */
-				if (!(pos_sensor < m_time_num && pos_sensor >= 0.0))
-					continue;
+				/* Iterate over samples */
+				for (const RadianceSampleR& r : rec.samples) {
+					/* Calculate sample's time coordinate */
+					Real cam_time = camera_unwarp ? (r.time - rec.distance) : r.time;
+					Real pos_sensor = (cam_time - m_offset) / m_exposure_time;
 
-				/* Get positions on the temporal line */
-				get_film_samples(pos_sensor, 2, temporal_samples);
+					/* If out of the range of the sensor, discard */
+					if (!(pos_sensor < m_frame_num && pos_sensor >= 0.0))
+						continue;
 
-				/* Finally, just draw the radiances on the streak film, multiplied by the
-				 * spatio-temporal filtering weight!. Note that the temporal weight doesn't act as
-				 * a filtering weight, but as a PSF. Thus, is additive.
-				 */
-				for (const Real& t : temporal_samples) {
-					add_temporal_sample(r, w, x, y, t, pos_sensor);
+					add_temporal_sample(r, w, x, y, sample_t, pos_sensor);
+
+					/* And store it into the accumulated image */
+					FTR::draw_pixel(x, y, r.radiance * w, -1.);
 				}
 
-				/* And store it into the accumulated image */
-				FTR::draw_pixel(x, y, r.radiance * w, -1.);
+				/* Store components if requested */
+				FTR::add_components(x, y, rec, w);
 			}
-
-			/* Store components if requested */
-			FTR::add_components(x, y, rec, w);
 		}
 	}
 
@@ -172,7 +168,7 @@ public:
 
 	virtual Real get_time_length() const override
 	{
-		return Real(m_time_num) * m_exposure_time + m_offset;
+		return Real(m_frame_num) * m_exposure_time + m_offset;
 	}
 
 	virtual Real get_exposure_time() const override
@@ -233,6 +229,7 @@ void TimesliceFilm<D, Radiance>::advance_timeline()
 	for (size_t i = 0; i < Radiance::components; i++) {
 		(*m_available_slices.begin())[i].clean();
 	}
+	(*m_weight_slices.begin()).clean();
 
 	std::rotate(m_available_slices.begin(),
 		m_available_slices.begin()++, m_available_slices.end());
@@ -248,17 +245,15 @@ void TimesliceFilm<D, Radiance>::advance_timeline()
 				m_available_slices_nsamples.begin()++, m_available_slices_nsamples.end());
 	}
 
-	m_first_available_slice = std::min<size_t>(m_first_available_slice + 1, m_time_num - 1);
-	m_last_available_slice = std::min<size_t>(m_last_available_slice + 1, m_time_num - 1);
+	m_first_available_slice = std::min<size_t>(m_first_available_slice + 1, m_frame_num - 1);
+	m_last_available_slice = std::min<size_t>(m_last_available_slice + 1, m_frame_num - 1);
 }
 
 template<unsigned D, class Radiance>
 void TimesliceFilm<D, Radiance>::add_temporal_sample(const RadianceSampleR& r, Real w,
 	unsigned int x, unsigned int y, Real tr, Real ts, bool filtered)
 {
-	size_t index = (size_t)std::floor(ts) - m_first_available_slice;
-	if(index >= m_available_slices.size())
-		return;
+	size_t index = (size_t)std::floor(tr) - m_first_available_slice;
 
 	Radiance rad = r.radiance;
 
@@ -346,20 +341,11 @@ void TimesliceFilm<D, Radiance>::average_and_save_slice(const unsigned int t, co
 	if (!FTR::averaged) {
 		/* Apply spatial filter */
 		for (size_t c = 0; c < Radiance::components; c++) {
-			out_image[c].weight(FTR::m_weight);
+			out_image[c].weight(m_weight_slices[index]);
 			
-			// ????
-			// if (c != 0) {
-			// 	/* Normalize value to 0..1, nonnegative */
-			// 	Imaging::ImageRow<> row_rad = out_image[0].row(i);
-
-			// 	row.weight(row_rad);
-			// 	row.weight(2.0);
-			// 	row.add(0.5);
-			// }
 			if (FTR::m_components && FilmComponents::VARIANCE) {
-				out_image_var->weight(FTR::m_weight);
-				out_image_ns->weight(FTR::m_weight);
+				out_image_var->weight(m_weight_slices[index]);
+				out_image_ns->weight(m_weight_slices[index]);
 			}
 		}
 	}
