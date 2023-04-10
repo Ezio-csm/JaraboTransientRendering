@@ -41,15 +41,15 @@
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere1.obj"/>
-		<ref id="red"/>
-		<!-- <vel x="0.05" y="0.0" z="0.0"/>
-		<time beg="0" end="30"/> -->
+		<ref id="mirror"/>
+		<vel x="0.05" y="0.0" z="0.0"/>
+		<time beg="0" end="30"/>
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere2.obj"/>
-		<ref id="blue"/>
-		<!-- <vel x="0.00" y="0.05" z="0.00"/>
-		<time beg="0" end="30"/> -->
+		<ref id="glass"/>
+		<vel x="0.0" y="0.05" z="0.05"/>
+		<time beg="0" end="30"/>
 	</shape>
 	<sensor type="perspective">
 		<float name="fov" value="42.13"/>

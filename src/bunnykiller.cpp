@@ -1720,8 +1720,9 @@ int main(int argc, char* argv[])
 	printf("Using a streak film...\n");
 	std::unique_ptr<TimesliceFilmS> tfilm;
 	BoxFilter* filter = new BoxFilter(1.);
+	GaussianFilter* time_filter = new GaussianFilter((Real)5.0);
 	tfilm = std::make_unique<TimesliceFilmS>(p.width, p.height, p.time, p.time_resolution,
-			p.camera_unwarp, filter, comp);
+			p.camera_unwarp, filter, time_filter, comp);
 	tfilm->set_name(p.image_file, "hdr");
 
 	if (p.film_offset > 0.0)
