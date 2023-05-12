@@ -52,7 +52,7 @@ public:
 		Real m_pi;
 
 		Real m_time;
-		Real m_distance;
+		Real m_distance; // seems this variable is useless, and ambiguous
 
         union VertexData {
 			/* Data */

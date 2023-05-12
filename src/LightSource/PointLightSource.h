@@ -183,12 +183,15 @@ bool PointLightSource<D, Radiance>::sample_reverse(const VectorN<D> &p, LightSam
 	light_sample.dist = std::sqrt(distance2);
 	light_sample.dir /= light_sample.dist;
 
-	/* Check visibility */
-	Ray<D> ray(p, -light_sample.dir, false, t);
-	if (this->world->intersects(ray, light_sample.dist, _SIGMA_VISIBILITY_, true) || 
-		t - (this->world->time_of_flight(light_sample.dist) * this->world->get_ior()) < 0) {
+	// 
+	Real light_start_time = t - (this->world->time_of_flight(light_sample.dist) * this->world->get_ior());
+	if(light_start_time < 0) {
 		return false;
 	}
+	/* Check visibility */
+	Ray<D> ray(p, -light_sample.dir, false, t);
+	if (this->world->intersects(ray, light_sample.dist, _SIGMA_VISIBILITY_, true))
+		return false;
 
 	Real att(0.);
 	if (D == 2)

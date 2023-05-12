@@ -712,7 +712,7 @@ bool BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::connect_vertex_
 
 	const VectorN<D>& vertex_position = eye_vertex.get_vertex_position();
 
-	if (ITR::m_world.sample_light(pl1)->sample_reverse(vertex_position, light_sample, pl2, t)) {
+	if (ITR::m_world.sample_light(pl1)->sample_reverse(vertex_position, light_sample, pl2, t - eye_vertex.get_subpath_delay())) {
 		RadianceAttenuation fe;
 
 		Real pe = 1.;
@@ -1212,7 +1212,7 @@ void BidirectionalPathTracing<D, Radiance, RadianceAttenuation>::operator()(cons
 			ITR::m_world.sample_light(pl1)->sample(light_sample, pl2);
 		
 		// Generate eye path
-		generate_path(r, Radiance(1), 1, 0, light_sample.pos, TraceDirection::FROM_EYE, eye_path, true);
+		generate_path(r, Radiance(1), 1, camera_time, light_sample.pos, TraceDirection::FROM_EYE, eye_path, true);
 		if (eye_path.size() == 0)
 			continue;
 
