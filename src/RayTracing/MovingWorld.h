@@ -430,7 +430,7 @@ public:
 		float flag = reverse_time ? -1. : 1.;
 		/* Initialize ray */
 		RTCRay rtc_ray;
-		// Ray origin
+		// check the static objects first
 		rtc_ray.org[0] = (float)ray.get_origin()[0];
 		rtc_ray.org[1] = (float)ray.get_origin()[1];
 		rtc_ray.org[2] = (float)ray.get_origin()[2];
@@ -447,22 +447,36 @@ public:
         RTCRay static_rtc_ray = rtc_ray;
 		rtcIntersect(World::g_scene, rtc_ray);
 		RTCScene use_scene = World::g_scene;
+
+		// check motional objects
         for(auto obj : objects)
         {
             RTCRay t_rtc_ray = static_rtc_ray;
+			// because we will change light velocity, the tfar distance is incorrect, set it to inf
+			t_rtc_ray.tfar = std::numeric_limits<Real>::infinity();
+			// calculate the relative position at start_time
             VectorN<D> origin = ray.get_origin();
             Real moving_time = ray.get_start_time() - obj.start_time;
             origin = origin - obj.velocity * moving_time;
             t_rtc_ray.org[0] = (float)origin[0];
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
+			// calculate the relative velocity between light and object
             VectorN<D> dir = ray.get_direction();
-            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
+			VectorN<D> dir_unnorm = dir * light_speed / ray.get_ior() - flag * obj.velocity;
+            dir = dir_unnorm.normalized();
             t_rtc_ray.dir[0] = (float)dir[0];
             t_rtc_ray.dir[1] = (float)dir[1];
             t_rtc_ray.dir[2] = (float)dir[2];
             rtcIntersect(obj.g_scene, t_rtc_ray);
-            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+			// because we changed the light direction and velocity, the t_rtc_ray.tfar is incorrect
+			// we need to recompute it
+			Real travel_time = t_rtc_ray.tfar / dir_unnorm.length();
+			Real dis = light_speed / ray.get_ior() * travel_time;
+			t_rtc_ray.tfar = dis;
+            Real t_time = travel_time + ray.get_start_time();
+			// check if the time is in the movement time interval
+			// check if the distance is near than previous result
             if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
 			{
                 rtc_ray = t_rtc_ray;
@@ -522,22 +536,35 @@ public:
 
 		RTCRay static_rtc_ray = rtc_ray;
 		rtcIntersect(World::g_scene, rtc_ray);
+        // check motional objects
         for(auto obj : objects)
         {
             RTCRay t_rtc_ray = static_rtc_ray;
+			// because we will change light velocity, the tfar distance is incorrect, set it to inf
+			t_rtc_ray.tfar = std::numeric_limits<Real>::infinity();
+			// calculate the relative position at start_time
             VectorN<D> origin = ray.get_origin();
             Real moving_time = ray.get_start_time() - obj.start_time;
             origin = origin - obj.velocity * moving_time;
             t_rtc_ray.org[0] = (float)origin[0];
             t_rtc_ray.org[1] = (float)origin[1];
             t_rtc_ray.org[2] = (float)origin[2];
+			// calculate the relative velocity between light and object
             VectorN<D> dir = ray.get_direction();
-            dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
+			VectorN<D> dir_unnorm = dir * light_speed / ray.get_ior() - flag * obj.velocity;
+            dir = dir_unnorm.normalized();
             t_rtc_ray.dir[0] = (float)dir[0];
             t_rtc_ray.dir[1] = (float)dir[1];
             t_rtc_ray.dir[2] = (float)dir[2];
             rtcIntersect(obj.g_scene, t_rtc_ray);
-            Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
+			// because we changed the light direction and velocity, the t_rtc_ray.tfar is incorrect
+			// we need to recompute it
+			Real travel_time = t_rtc_ray.tfar / dir_unnorm.length();
+			Real dis = light_speed / ray.get_ior() * travel_time;
+			t_rtc_ray.tfar = dis;
+            Real t_time = travel_time + ray.get_start_time();
+			// check if the time is in the movement time interval
+			// check if the distance is near than previous result
             if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
                 rtc_ray = t_rtc_ray;
         }
@@ -545,50 +572,6 @@ public:
 		return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
 	}
 
-	// virtual bool is_visible(const VectorN<D> &v1, const VectorN<D> &v2,
-	// 		const Real epsilon = _SIGMA_VISIBILITY_, bool reverse_time = false) const override
-	// {
-	// 	float flag = reverse_time ? -1. : 1.;
-	// 	/* initialize ray */
-	// 	RTCRay rtc_ray;
-	// 	// Ray origin
-	// 	rtc_ray.org[0] = (float)v1[0];
-	// 	rtc_ray.org[1] = (float)v1[1];
-	// 	rtc_ray.org[2] = (float)v1[2];
-	// 	rtc_ray.dir[0] = (float)(v2 - v1)[0];
-	// 	rtc_ray.dir[1] = (float)(v2 - v1)[1];
-	// 	rtc_ray.dir[2] = (float)(v2 - v1)[2];
-	// 	rtc_ray.tnear = (float)epsilon;
-	// 	rtc_ray.tfar = (float)((v2 - v1).length() - epsilon);
-	// 	rtc_ray.time = 0.f; // Time for motion blur
-	// 	rtc_ray.mask = 0XFFFFFFFF;
-	// 	rtc_ray.geomID = RTC_INVALID_GEOMETRY_ID;
-	// 	rtc_ray.primID = RTC_INVALID_GEOMETRY_ID;
-
-	// 	RTCRay static_rtc_ray = rtc_ray;
-	// 	rtcOccluded(World::g_scene, rtc_ray);
-    //     for(auto obj : objects)
-    //     {
-    //         RTCRay t_rtc_ray = static_rtc_ray;
-    //         VectorN<D> origin = v1;
-    //         Real moving_time = ray.get_start_time() - obj.start_time;
-    //         origin = origin + obj.velocity * moving_time;
-    //         t_rtc_ray.org[0] = (float)origin[0];
-    //         t_rtc_ray.org[1] = (float)origin[1];
-    //         t_rtc_ray.org[2] = (float)origin[2];
-    //         VectorN<D> dir = ray.get_direction();
-    //         dir = (dir * light_speed / ray.get_ior() - flag * obj.velocity).normalized();
-    //         t_rtc_ray.dir[0] = (float)dir[0];
-    //         t_rtc_ray.dir[1] = (float)dir[1];
-    //         t_rtc_ray.dir[2] = (float)dir[2];
-    //         rtcOccluded(obj.g_scene, t_rtc_ray);
-    //         Real t_time = flag * t_rtc_ray.tfar / light_speed * ray.get_ior() + ray.get_start_time();
-    //         if(obj.start_time <= t_time && t_time <= obj.end_time && t_rtc_ray.tfar < rtc_ray.tfar)
-    //             rtc_ray = t_rtc_ray;
-    //     }
-
-	// 	return (rtc_ray.geomID != RTC_INVALID_GEOMETRY_ID);
-	// }
 #endif // _USE_EMBREE_
 
     virtual Real time_of_flight(Real distance) const override

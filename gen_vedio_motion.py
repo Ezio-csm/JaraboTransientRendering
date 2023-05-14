@@ -8,12 +8,12 @@ image_files = sorted(glob.glob('./build/Release/cornell_*.hdr'))
 images = []
 for file in image_files:
     image = cv2.imread(file, cv2.IMREAD_ANYDEPTH | cv2.IMREAD_COLOR)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     # plt.imshow(image)
     # plt.show()
     images.append(image)
 
 images = np.array(images) # h,w,t,c
+images[images > 0.999] = 0.999
 print(images.shape)
 
 # sum_images = images

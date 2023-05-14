@@ -42,24 +42,24 @@
 	<shape type="obj">
 		<string name="filename" value="sphere1.obj"/>
 		<ref id="glass"/>
-		<vel x="0.05" y="0.0" z="0.0"/>
-		<time beg="0" end="30"/>
+		<vel x="0.15" y="0.0" z="0.0"/>
+		<time beg="0" end="1000"/>
 	</shape>
 	<shape type="obj">
 		<string name="filename" value="sphere2.obj"/>
 		<ref id="mirror"/>
-		<vel x="0.0" y="0.05" z="0.05"/>
-		<time beg="0" end="30"/>
+		<vel x="0.0" y="0.15" z="0.15"/>
+		<time beg="0" end="1000"/>
 	</shape>
 	<sensor type="perspective">
 		<float name="fov" value="42.13"/>
 		<sampler>
-			<integer name="sampleCount" value="4"/>
+			<integer name="sampleCount" value="3"/>
 		</sampler>
 		<film type="hdrfilm">
-			<integer name="width" value="800"/>
-			<integer name="height" value="600"/>
-			<integer name="time" value="500"/>
+			<integer name="width" value="400"/>
+			<integer name="height" value="300"/>
+			<integer name="time" value="1000"/>
 			
 			<float name="timeResolution" value="0.1"/>
 			<boolean name="steadyState" value="false"/>
