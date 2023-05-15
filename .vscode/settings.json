@@ -73,7 +73,8 @@
         "xtr1common": "cpp"
     },
     "cmake.debugConfig": {
-        "args": ["-parse-xml-file","../../scenes/cornell/cornell.xml","-film-name","cornell"]
+        // "args": ["-parse-xml-file","../../scenes/cornell/cornell.xml","-film-name","cornell"]
+        "args": ["-parse-xml-file","../../scenes/cube/cube.xml","-film-name","cube"]
     },
     "C_Cpp.errorSquiggles": "enabled",
 }

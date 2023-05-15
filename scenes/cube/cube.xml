@@ -1,0 +1,57 @@
+<scene>
+	<integrator type="bdpt">
+		<integer name="samples" value="3"/>
+	</integrator>
+	<bsdf type="diffuse" id="blue">
+		<srgb value="#3333DD"/>
+	</bsdf>
+	<bsdf type="diffuse" id="grey">
+		<srgb value="#CCCCCC"/>
+	</bsdf>
+	<bsdf type="diffuse" id="white">
+		<srgb value="#FFFFFF"/>
+	</bsdf>
+	<bsdf type="diffuse" id="red">
+		<srgb value="#DD3333"/>
+	</bsdf>
+	<bsdf type="conductor" id="mirror">
+		<spectrum name="eta" value="0.15016"/>
+		<spectrum name="k" value="3.4727"/>
+	</bsdf>
+	<bsdf type="dielectric" id="glass">
+		<float name="n1" value="1.5"/>
+		<float name="n0" value="1"/>
+		<float name="absorp" value="0.01"/>
+	</bsdf>
+	<shape type="obj">
+		<string name="filename" value="floor.obj"/>
+		<ref id="grey"/>
+	</shape>
+	<shape type="obj">
+		<string name="filename" value="cube.obj"/>
+		<ref id="red"/>
+		<vel x="0.8" y="0.0" z="0.0"/>
+		<time beg="0" end="1000"/>
+	</shape>
+	<sensor type="perspective">
+		<float name="fov" value="42.13"/>
+		<sampler>
+			<integer name="sampleCount" value="3"/>
+		</sampler>
+		<film type="hdrfilm">
+			<integer name="width" value="400"/>
+			<integer name="height" value="300"/>
+			<integer name="time" value="500"/>
+			
+			<float name="timeResolution" value="0.1"/>
+			<boolean name="steadyState" value="false"/>
+		</film>
+		<transform type="toWorld">
+			<lookat target="10,1,0" origin="10,5,10" up="0,1,0"/>
+		</transform>
+	</sensor>
+	<emitter type="point">
+		<rgb type="intensity" value="30, 30, 30"/>
+		<point x="5" y="10" z="2"/>
+	</emitter>
+</scene>

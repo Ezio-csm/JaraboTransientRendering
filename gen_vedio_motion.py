@@ -4,7 +4,8 @@ import glob
 import matplotlib.pyplot as plt
 
 # 读取HDR图像
-image_files = sorted(glob.glob('./build/Release/cornell_*.hdr'))
+# image_files = sorted(glob.glob('./build/Release/cornell_*.hdr'))
+image_files = sorted(glob.glob('./build/Release/cube_*.hdr'))
 images = []
 for file in image_files:
     image = cv2.imread(file, cv2.IMREAD_ANYDEPTH | cv2.IMREAD_COLOR)
