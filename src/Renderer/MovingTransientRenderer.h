@@ -23,17 +23,14 @@ protected:
 	using RadianceSampleRecordVectorR = typename RETR::RadianceSampleRecordVectorR;
 	using IntegratorR = typename RETR::IntegratorR;
 	using WorldR = typename RETR::WorldR;
-protected:
-	bool time_sampling;
-public:
-	bool sensor_mode;
+
 public:
 	MovingTransientRenderer() :
-		RETR(nullptr), time_sampling(false), sensor_mode(false)
+		RETR(nullptr)
 	{}
 
-	MovingTransientRenderer(FILE *_f_log, bool _time_sampling = false) :
-		RETR(_f_log), time_sampling(_time_sampling), sensor_mode(false)
+	MovingTransientRenderer(FILE *_f_log) :
+		RETR(_f_log)
 	{}
 
 	virtual ~MovingTransientRenderer() {}
@@ -41,10 +38,6 @@ public:
 	virtual void render(const char *name, WorldR& world, IntegratorR *integrator,
 						const Camera<D>& camera, FilmR *film, Sampler *sampler) const;
 
-	void set_sensor_mode (bool _sensor_mode)
-	{
-		sensor_mode = _sensor_mode;
-	}
 }; // MovingTransientRenderer
 
 template<unsigned D, class Radiance, class RadianceAttenuation>
@@ -60,11 +53,6 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 	if (!integrator) {
 		throw std::runtime_error("Error: Need to define an integrator for rendering\n");
 	}
-
-	// This rendered can only render into streak films. Thus, it is needed to
-	// test it.
-	//if( static_cast<StreakCameraFilm*>(film) == 0 )
-	//	throw("Transient Renderer needs an StreakCameraFilm");
 
 	// ----------------------------------------------------------------------
 	// If needed, preprocess integrator ...
@@ -117,9 +105,9 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		}
 		curr_sample++;
 
+		// Convert pixel positions to screen space coordinates
 		VectorN<D-1> ic;
 		Vector2 meh = film->window_coords2image_coords(film_sample.position);
-		
 		if (D == 2) {
 			ic[0] = meh[0];
 		} else {
@@ -130,9 +118,15 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		// Get the camera sample ray...
 		Ray<D> r = camera.get_ray(ic);
 		r.set_start_time(film_sample.current_time);
+		r.set_medium(world.get_medium());
+		r.set_refraction_index(world.get_ior());
 
-		// ...trace the ray, compute time-resolved samples, and store them...
-        world.Li(r, integrator, samples_rec, film->get_time_length(), film->get_time_resolution());
+		// ...trace the ray, compute samples, and store them...
+		(*integrator)(r, samples_rec.samples, film->get_time_length(), film->get_time_resolution());
+		/* Not Implement Warning:
+		If the film want's to store pos, normal, depth etc.
+		You must set samples_rec.pos, normal, depth/
+		*/
 
 		// ...discard NaNs and infinities and align
 		for (RadianceSampleR& sample : samples_rec.samples) {
@@ -145,7 +139,7 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		if(samples_rec.samples.size() > 0)
 			film->add_samples(film_sample, samples_rec);
 
-		// No point on shrinking
+		// clear sample record
 		samples_rec.samples.reserve(samples_rec.samples.capacity());
 		samples_rec.samples.clear();
 	}
@@ -168,7 +162,7 @@ void MovingTransientRenderer<D,Radiance,RadianceAttenuation>::render(const char 
 		}
 	}
 	
-	// Save the image
+	// Save the image for the last time
 	film->write(name);
 }
 

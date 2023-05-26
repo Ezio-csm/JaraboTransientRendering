@@ -1733,9 +1733,7 @@ int main(int argc, char* argv[])
 		tfilm->set_offset(p.film_offset);
 
 	film = std::move(tfilm);
-	engine = new MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>(f_log, p.time_sampling);
-	static_cast<MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>*>(engine)->set_sensor_mode(
-			sensor_mode);
+	engine = new MovingTransientRenderer<DIM, Radiance, RadianceAttenuation>(f_log);
 #else
 	if (p.transient) {
 		// If rendering in transient state...

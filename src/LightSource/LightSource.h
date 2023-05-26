@@ -28,6 +28,7 @@
 #include "bunnykiller.h"
 #include "Color/Spectrum.h"
 #include "LightSource/LightSample.h"
+#include "LightSource/LightFunctions.h"
 
 template<unsigned int D, class Radiance> class World;
 template<unsigned int D> class Intersection;
@@ -41,11 +42,22 @@ protected:
 	World<D, Radiance>* world;
 	Radiance intensities;
 	Real time;
+	BaseLightFunction<Radiance>* lightFunc;
+
 public:
 	LightSource(World<D,Radiance>* _world, const Radiance &_intensities, Real _time = 0.)
-		:world(_world), intensities(_intensities), time(_time) {}
+		:world(_world), intensities(_intensities), time(_time) {
+			lightFunc = new BoxWindowFunc<Radiance>();
+		}
 
 	virtual ~LightSource() {}
+	
+	virtual void SetLightFunction(BaseLightFunction<Radiance>* _lightFunc)
+	{
+		if (lightFunc)
+			delete lightFunc;
+		lightFunc = _lightFunc;
+	}
 		 
 	/** Return the incoming direction from light to point */
 	virtual VectorN<D> get_incoming_direction(const VectorN<D> &point_lighted) const = 0;
@@ -78,12 +90,9 @@ public:
 
 	/** Sample the light source randomly, so it gives an origin to light-tracing algorithms */
 	virtual void sample(LightSample<D, Radiance> &light_sample, Real &pdf) const = 0;
-
-	virtual bool sample_reverse(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf, Real t) const = 0;
-	
-	/** Sample the light accordingly to a point in space.
-		Returns false if the light is not visible from it */
-	virtual bool sample(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf) const = 0;
+	/** Sample the light accordingly to a point in space and a time.
+		Returns false if the light is not visible from it at that time*/
+	virtual bool sample(const VectorN<D> &p, LightSample<D, Radiance> &light_sample, Real &pdf, Real t=0) const = 0;
 
 	virtual void print(FILE *_f_log) const {}
 

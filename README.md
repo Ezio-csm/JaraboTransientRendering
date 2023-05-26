@@ -8,6 +8,10 @@ the rendering algorithms developed for transient rendering described in:
 > Adrian Jarabo, Julio Marco, Adolfo Muñoz, Raul Buisan, Wojciech Jarosz, Diego Gutierrez  
 > ACM Transactions on Graphics, Vol.33(6), SIGGRAPH Asia 2014  
 
+-----
+
+Based on the paper above, we add some new features for transient rendering of moving objects. 
+
 Overview
 --------
 
@@ -20,35 +24,21 @@ INPUT.md.
   be used by using additional dlls.
 * The code is designed with educational purposes, and therefore is not optimized  
   for speed, but to be the most comprehensive and extendible as possible.
-* We will try to update the code with additional features and new goodies  
-  periodically; unfortunately, this periodicity might not be as good as we'd  
-  like. In any case, stay tuned to the
-  [project page](http://giga.cps.unizar.es/~ajarabo/pubs/transientSIGA14/code).
+* The original [project page is here](http://giga.cps.unizar.es/~ajarabo/pubs/transientSIGA14/code).
 
-License
--------
+## 代码说明
 
-This piece of code is licensed under the MIT License (See LICENSE). Unless you  
-really care, you can safely ignore all licenses in the source code.
+类```RenderEngine```为实现渲染的入口类，会调用以下函数执行渲染：
 
-Use it as you wish, but please reference the original publication:
+```c++
+RenderEngine->render(const char* name, World, Integrator, Camera, Film, Sampler)
+```
 
-    @article{Jarabo2014transient,
-        author = {Jarabo, Adrian and Marco, Julio and
-        	{Mu\~{n}oz}, Adolfo and Buisan, Raul and
-        	Jarosz, Wojciech and Gutierrez, Diego},
-        title = {A Framework for Transient Rendering},
-        journal = {ACM Transactions on Graphics (SIGGRAPH Asia 2014)},
-        volume = {33},
-        number = {6},
-        year = {2014},
-    }
+下面分别说明参数中的类：
 
-Contact
--------
-
- If you have any questions and/or suggestions for improving explanations or new  
- features, feel free to contact Adrian Jarabo <ajarabo@unizar.es>, or Julio  
- Marco <juliom@unizar.es>. Also, if you have coded any additional stuff that  
- you'd like us to include in the main project, we'll be happy to do it.
+1. ```World```存储整个场景中的模型、光源、材质等信息，实现光线与环境求交的功能；
+2. ```Integrator```积分器类，计算渲染方程中的积分。计算过程中对积分进行蒙特卡洛采样，并返回采样后计算得到的所有样本值；
+3. ```Camera```相机类，存储相机参数；
+4. ```Film```用于将积分器得到的样本，按照一定规则累积到视频中某一帧的某一位置上，最终生成HDR图片；
+5. ```Sampler```采样器类，由于整个视频是一个$T\times H\times W \times D$的结构（时间、长、宽、颜色通道），采样器对其中若干个维度采样（比如像素位置x,y），使用积分器在该维度确定情况下采集剩余维度的样本。
 
