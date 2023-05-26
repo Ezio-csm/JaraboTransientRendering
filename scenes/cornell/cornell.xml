@@ -1,6 +1,6 @@
 <scene>
 	<integrator type="bdpt">
-		<integer name="samples" value="3"/>
+		<integer name="samples" value="1"/>
 	</integrator>
 	<bsdf type="diffuse" id="blue">
 		<srgb value="#3333DD"/>
@@ -54,12 +54,12 @@
 	<sensor type="perspective">
 		<float name="fov" value="42.13"/>
 		<sampler>
-			<integer name="sampleCount" value="3"/>
+			<integer name="sampleCount" value="1"/>
 		</sampler>
 		<film type="hdrfilm">
-			<integer name="width" value="400"/>
-			<integer name="height" value="300"/>
-			<integer name="time" value="1000"/>
+			<integer name="width" value="200"/>
+			<integer name="height" value="150"/>
+			<integer name="time" value="300"/>
 			
 			<float name="timeResolution" value="0.1"/>
 			<boolean name="steadyState" value="false"/>
